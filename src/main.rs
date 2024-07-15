@@ -30,6 +30,7 @@ fn main() -> ! {
     let mut latch = || {
         e.set_high();
         e.set_low();
+        delay.delay(2.millis());
     };
 
     let mut write = |nibble: u8| {
@@ -44,6 +45,7 @@ fn main() -> ! {
 
     rs.set_low();
     rw.set_low();
+    delay.delay(10.nanos());
 
     // Function set
     write(0b0010);
@@ -79,31 +81,50 @@ fn main() -> ! {
     delay.delay(72.micros());
 
     let mut i = 0u8;
-    let mut byte = 0u8;
+    let mut byte = b'0';
     loop {
-        // Entry mode set
+        let a = byte;
+        byte = match byte {
+            b'9' => b'A',
+            b'F' => b'0',
+            _ => byte + 1,
+        };
+
+        let b = byte;
+        byte = match byte {
+            b'9' => b'A',
+            b'F' => b'0',
+            _ => byte + 1,
+        };
+
+        // Set DDRAM address
         rs.set_low();
         rw.set_low();
+        delay.delay(10.nanos());
         write(0b1000 | (i >> 4));
         latch();
-        write(i & 0xF);
+        write(i & 0b1111);
         latch();
         delay.delay(72.micros());
 
         // Write RAM
         rs.set_high();
         rw.set_low();
-        write(byte >> 4);
+        delay.delay(10.nanos());
+        write(a >> 4);
         latch();
-        write(byte & 0xF);
+        write(a & 0b1111);
+        latch();
+        write(b >> 4);
+        latch();
+        write(b & 0b1111);
         latch();
         delay.delay(72.micros());
 
-        i = i.wrapping_add(i);
+        log::info!("Wrote {:?} and {:?} at 0x{i:02x}", a as char, b as char);
 
-        byte = byte.wrapping_add(1);
+        i = i.wrapping_add(1);
 
-        log::info!("Wrote {:?} at 0x{i:02x}", byte as char);
         delay.delay(100.millis());
     }
 }
