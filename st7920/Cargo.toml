@@ -1,0 +1,10 @@
+[package]
+name = "st7920"
+version = "0.1.0"
+authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+esp-hal = { version = "0.19.0" }
+fugit = "0.3.7"

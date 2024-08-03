@@ -5,18 +5,20 @@ authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
+[workspace]
+members = ["st7920"]
+
 [dependencies]
-esp-backtrace = { version = "0.12.0", features = [
+esp-backtrace = { version = "0.13.0", features = [
     "esp32",
     "exception-handler",
     "panic-handler",
     "println",
 ] }
-# esp-hal = { version = "0.18.0", features = [ "esp32" ] }
-esp-hal = { git = "https://github.com/esp-rs/esp-hal", features = [ "esp32" ] }
-esp-println = { version = "0.9.1", features = ["esp32", "log"] }
+esp-hal = { version = "0.19.0", features = [ "esp32" ] }
+esp-println = { version = "0.10.0", features = ["esp32", "log"] }
 log = { version = "0.4.21" }
-fugit = "0.3.7"
+st7920 = { path = "st7920" }
 
 [profile.dev]
 # Rust debug is too slow.
