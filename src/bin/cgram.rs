@@ -2,34 +2,11 @@
 #![no_main]
 
 use esp_backtrace as _;
-use esp_hal::{
-    clock::ClockControl, delay::Delay, gpio::Io, peripherals::Peripherals, prelude::*, rng::Rng,
-    system::SystemControl,
-};
+use esp_hal::prelude::*;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-
-    let clocks = ClockControl::max(system.clock_control).freeze();
-    let delay = Delay::new(&clocks);
-    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    let mut rng = Rng::new(peripherals.RNG);
-
-    esp_println::logger::init_logger_from_env();
-
-    let mut lcd = st7920::Driver::setup(
-        io.pins.gpio27,
-        io.pins.gpio14,
-        io.pins.gpio13,
-        st7920::bus::Bus::new(
-            io.pins.gpio32,
-            io.pins.gpio33,
-            io.pins.gpio25,
-            io.pins.gpio26,
-        ),
-    );
+    let (mut lcd, delay, mut rng) = rg16032e::setup();
 
     lcd.set_cgram_addr(0);
     for _ in 0..4 {

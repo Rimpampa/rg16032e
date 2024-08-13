@@ -19,6 +19,12 @@ pub struct Bus {
     pub db7: AnyFlex<'static>,
 }
 
+pub macro new($($field:ident : $value:expr),* $(,)?) {
+    $crate::bus::Bus {
+        $( $field : ::esp_hal::gpio::AnyFlex::new($value), )*
+    }
+}
+
 impl Bus {
     pub fn new(
         db4: impl In + Out,

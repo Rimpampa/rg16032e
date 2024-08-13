@@ -4,26 +4,11 @@
 use core::array;
 
 use esp_backtrace as _;
-use esp_hal::{gpio::Io, peripherals::Peripherals, prelude::*};
+use esp_hal::prelude::*;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = Peripherals::take();
-    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
-
-    esp_println::logger::init_logger_from_env();
-
-    let mut lcd = st7920::Driver::setup(
-        io.pins.gpio27,
-        io.pins.gpio14,
-        io.pins.gpio13,
-        st7920::bus::Bus::new(
-            io.pins.gpio32,
-            io.pins.gpio33,
-            io.pins.gpio25,
-            io.pins.gpio26,
-        ),
-    );
+    let (mut lcd, ..) = rg16032e::setup();
 
     lcd.display_on_off(true, false, true);
 
