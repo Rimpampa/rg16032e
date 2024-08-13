@@ -117,8 +117,8 @@ impl Exec<Extended> for Driver {
             SelectScroll => 0b00000011,
             SelectCgRam => 0b00000010,
             Reverse(addr) => 0b00000100 | (addr & 0b00000011),
-            Set => 0b00001000,
-            SetGraphic => 0b00001010,
+            Set => 0b00100100,
+            SetGraphic => 0b00100110,
             ScrollAddr(addr) => 0b01000000 | (addr & 0b00011111),
             GraphicRamAddr { y, x } => {
                 self.write_u8(0b10000000 | (y & 0b1111));

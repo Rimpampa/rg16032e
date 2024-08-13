@@ -128,6 +128,10 @@ impl Driver {
         self.exec(Extended::Reverse(line))
     }
 
+    pub fn set_basic(&mut self) {
+        self.exec(Basic::Set)
+    }
+
     pub fn set_extended(&mut self) {
         self.exec(Extended::Set)
     }
