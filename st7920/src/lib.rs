@@ -68,13 +68,13 @@ impl Driver {
 
     pub fn read_address_counter(&mut self) -> (bool, u8) {
         self.select_busy_flag();
-        let _ = self.read_u8(); // ignore first read
         let read = self.read_u8();
         ((read >> 7) != 0, read & 0b01111111)
     }
 
     pub fn wait_busy(&mut self) {
-        while self.read_address_counter().0 {}
+        let end = ll::now() + 1.millis();
+        while self.read_address_counter().0 && ll::now() < end {}
     }
 
     pub fn clear(&mut self) {
