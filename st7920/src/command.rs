@@ -1,130 +1,241 @@
-use super::{Driver, Mode};
-
-pub trait Exec<Command> {
-    fn exec(&mut self, command: Command);
-
-    fn exec_stateless(&mut self, command: Command);
-
-    fn exec_all(&mut self, iter: impl IntoIterator<Item = Command>) {
-        iter.into_iter().for_each(|command| self.exec(command))
-    }
-}
-
-fn bit(level: bool, bit: u8) -> u8 {
-    (level as u8) << bit
+fn bit<T: Into<u8>>(v: T, bit: u8) -> u8 {
+    v.into() << bit
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Basic {
+pub enum Command {
+    /// Write into the currently selected RAM
+    Write(u16),
+    // - - - - - - -BASIC - - - - - - -
+    /// Clear the contents of the display.
+    ///
+    /// Instruction Set: **Basic**
+    ///
+    /// This command sets all the DDRAM to `0x20` (ASCII space),
+    /// resets the Address Counter to 0, and resets the
+    /// currently applied display shift.
+    ///
+    /// This command also resets the entry mode, as if
+    /// this command was sent:
+    /// [`EntryMode { increment: true, shift: false }`](Command::EntryMode).
     Clear,
+    /// Reset the display shift and the Address Counter
+    ///
+    /// Instruction Set: **Basic**
     Home,
-    EntryMode { i_d: bool, s: bool },
-    DisplayOnOff { d: bool, c: bool, b: bool },
-    CursorDisplayControl { s_c: bool, r_l: bool },
-    Set,
+    /// Chose the behaviour after a read or write operation
+    ///
+    /// Instruction Set: **Basic**
+    EntryMode {
+        /// Whether the Address Counter is incrmented (`true`)
+        /// or decremented (`false`) after each read or write operation.
+        increment: bool,
+        /// Whether the whole DDRAM display contents is shifted in
+        /// the direction of the Address Counter (+1 = right, -1 = false).
+        shift: bool,
+    },
+    /// Enable or disable different parts of the LCD controller
+    ///
+    /// Instruction Set: **Basic**
+    DisplayOnOff {
+        display: bool,
+        cursor: bool,
+        blink: bool,
+    },
+    /// Move either the cursor or the entire display contents by 1
+    /// to the left or right
+    ///
+    /// Instruction Set: **Basic**
+    CursorDisplayCtrl {
+        /// Shift by 1 the display (`true`) or the cursor (`false`)
+        ///
+        /// When the display shifts the cursor follows the shift
+        /// direction and the Address Counter is left the same
+        sc: bool,
+        /// Right (`true`) or left (`false`)
+        rl: bool,
+    },
+    /// Select the _Basic instruction set_
+    SelectBasic,
+    /// Set the Character Generator RAM (CGRAM) address
+    ///
+    /// Instruction Set: **Basic** (also **Extended**
+    /// when [`EnableCgRam`](Command::EnableCgRam) is sent)
+    ///
+    /// After sending this command every read and write operation
+    /// happens on the CGRAM
     CgRamAddr(u8),
+    /// Set the Display Data RAM (DDRAM) address
+    ///
+    /// Instruction Set: **Basic**
+    ///
+    /// After sending this command every read and write operation
+    /// happens on the DDRAM
     DdRamAddr(u8),
-}
-
-impl Exec<Basic> for Driver {
-    fn exec(&mut self, command: Basic) {
-        use Basic::*;
-
-        self.wait_busy();
-
-        // NOTE:
-        // Specs says that in the same FUNCTION SET command you can
-        // change only one of DL, RE and G bits, so when switching from
-        // graphic mode to basic instruction set, first change to extended
-        // instruction set
-        // RE=1 G=1 ---> RE=1 G=0 ---> RE=0 G=0
-
-        if self.mode == Mode::Graphic {
-            self.exec_stateless(Extended::Set);
-            self.wait_busy();
-        }
-
-        if self.mode != Mode::Basic && command != Set {
-            self.exec_stateless(Set);
-            self.wait_busy();
-        }
-
-        self.mode = Mode::Basic;
-
-        self.exec_stateless(command);
-    }
-
-    fn exec_stateless(&mut self, command: Basic) {
-        use Basic::*;
-        self.select_command();
-        self.write_u8(match command {
-            Clear => 0b00000001,
-            Home => 0b00000010,
-            EntryMode { i_d, s } => 0b00000100 | bit(i_d, 1) | bit(s, 0),
-            DisplayOnOff { d, c, b } => 0b00001000 | bit(d, 2) | bit(c, 1) | bit(b, 0),
-            CursorDisplayControl { s_c, r_l } => 0b00010000 | bit(s_c, 3) | bit(r_l, 2),
-            Set => 0b00100000,
-            CgRamAddr(addr) => 0b01000000 | (addr & 0b00111111),
-            DdRamAddr(addr) => 0b10000000 | (addr & 0b01111111),
-        })
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Extended {
+    // - - - - - - EXTENDED - - - - - -
     StandBy,
-    SelectScroll,
-    SelectCgRam,
+    /// Enable the [`ScrollOffset`](Command::ScrollOffset) command
+    ///
+    /// Instruction Set: **Extended**
+    EnableScroll,
+    /// Select the Character Generator RAM (CGRAM)
+    ///
+    /// Instruction Set: **Extended**
+    EnableCgRam,
+    /// Reverse the pixels of the given line
+    ///
+    /// Instruction Set: **Extended**
+    ///
+    /// Only one line at the time can be reversed.
+    /// The first time this command is sent the given line
+    /// is reversed, while the second time it returns to normal
+    /// (no matter the given address).
     Reverse(u8),
-    Set,
-    SetGraphic,
-    ScrollAddr(u8),
-    GraphicRamAddr { y: u8, x: u8 },
+    /// Select the _Extended instruction set_
+    SelectExtended,
+    /// Select the _Graphic instruction set_
+    ///
+    /// > When going from the _Basic instruct set_ to the _Graphic_ one,
+    /// > the [`SelectExtended`](Command::SelectExtended) command must be run first.
+    SelectGraphic,
+    /// Set the vertical scroll offset
+    ///
+    /// Instruction Set: **Extended**
+    ///
+    /// > Make sure to run the [`SelectScroll`](Command::ScrollOffset) command first.
+    ScrollOffset(u8),
+    /// Set the Graphic RAM address
+    ///
+    /// Instruction Set: **Graphic**
+    GraphicRamAddr {
+        y: u8,
+        x: u8,
+    },
 }
 
-impl Exec<Extended> for Driver {
-    fn exec(&mut self, command: Extended) {
-        use Extended::*;
-
-        self.wait_busy();
-
-        // NOTE:
-        // Specs says that in the same FUNCTION SET command you can
-        // change only one of DL, RE and G bits, so when switching from
-        // basic instruction set to graphic, first change to extended
-        // instruction set
-        // RE=0 G=0 ---> RE=1 G=0 ---> RE=1 G=1
-
-        if self.mode == Mode::Basic {
-            self.mode = match command {
-                SetGraphic => Mode::Graphic,
-                Set => Mode::Extended,
-                _ => {
-                    self.exec_stateless(Set);
-                    self.wait_busy();
-                    Mode::Extended
-                }
-            }
-        }
-        self.exec_stateless(command);
+impl Command {
+    /// Execution time of the [`Command`] in microseconds
+    pub fn execution_time(self) -> u32 {
+        let Self::Clear = self else { return 72 };
+        1_600
     }
 
-    fn exec_stateless(&mut self, command: Extended) {
-        use Extended::*;
-        self.select_command();
-        self.write_u8(match command {
-            StandBy => 0b00000001,
-            SelectScroll => 0b00000011,
-            SelectCgRam => 0b00000010,
-            Reverse(addr) => 0b00000100 | (addr & 0b00000011),
-            Set => 0b00100100,
-            SetGraphic => 0b00100110,
-            ScrollAddr(addr) => 0b01000000 | (addr & 0b00011111),
-            GraphicRamAddr { y, x } => {
-                self.write_u8(0b10000000 | (y & 0b1111));
-                self.write_u8(0b10000000 | (x & 0b111111));
-                return;
-            }
+    pub fn into_bytes(self) -> [u8; 2] {
+        use Command::*;
+        let byte = match self {
+            Write(_) => unreachable!(),
+            Clear => 0b1,
+            Home => 0b10,
+            EntryMode {
+                increment: i,
+                shift: s,
+            } => 0b0100 | bit(i, 1) | bit(s, 0),
+            DisplayOnOff {
+                display: d,
+                cursor: c,
+                blink: b,
+            } => 0b1000 | bit(d, 2) | bit(c, 1) | bit(b, 0),
+            CursorDisplayCtrl { sc, rl } => 0b10000 | bit(sc, 3) | bit(rl, 2),
+            SelectBasic => 0b100000,
+            CgRamAddr(addr) => 0b01000000 | (addr & 0b0111111),
+            DdRamAddr(addr) => 0b10000000 | (addr & 0b1111111),
+            StandBy => 0b1,
+            EnableScroll => 0b11,
+            EnableCgRam => 0b10,
+            Reverse(line) => 0b100 | (line & 0b11),
+            SelectExtended => 0b100100,
+            SelectGraphic => 0b100110,
+            ScrollOffset(offset) => 0b1000000 | (offset & 0b11111),
+            GraphicRamAddr { y, x } => return [y & 0b1111, x & 0b111111].map(|b| 0b10000000 | b),
+        };
+        [byte, 0]
+    }
+}
+
+pub trait Execute {
+    fn execute(&mut self, command: Command);
+
+    fn write(&mut self, data: u16) {
+        self.execute(Command::Write(data))
+    }
+
+    fn clear(&mut self) {
+        self.execute(Command::Clear)
+    }
+
+    fn home(&mut self) {
+        self.execute(Command::Home)
+    }
+
+    fn entry_mode(&mut self, increment: bool, shift: bool) {
+        self.execute(Command::EntryMode { increment, shift })
+    }
+
+    fn display_on_off(&mut self, display: bool, cursor: bool, blink: bool) {
+        self.execute(Command::DisplayOnOff {
+            display,
+            cursor,
+            blink,
         })
+    }
+
+    fn cursor_display_ctrl(&mut self, sc: bool, rl: bool) {
+        self.execute(Command::CursorDisplayCtrl { sc, rl })
+    }
+
+    fn select_basic(&mut self) {
+        self.execute(Command::SelectBasic)
+    }
+
+    fn cgram_addr(&mut self, addr: u8) {
+        self.execute(Command::CgRamAddr(addr))
+    }
+
+    fn ddram_addr(&mut self, addr: u8) {
+        self.execute(Command::DdRamAddr(addr))
+    }
+
+    fn stand_by(&mut self) {
+        self.execute(Command::StandBy)
+    }
+
+    fn enable_scroll(&mut self) {
+        self.execute(Command::EnableScroll)
+    }
+
+    fn enable_cgram(&mut self) {
+        self.execute(Command::EnableCgRam)
+    }
+
+    fn reverse(&mut self, line: u8) {
+        self.execute(Command::Reverse(line))
+    }
+
+    fn select_extended(&mut self) {
+        self.execute(Command::SelectExtended)
+    }
+
+    fn select_graphic(&mut self) {
+        self.execute(Command::SelectGraphic)
+    }
+
+    fn scroll_offset(&mut self, offset: u8) {
+        self.execute(Command::ScrollOffset(offset))
+    }
+
+    fn graphic_ram_addr(&mut self, x: u8, y: u8) {
+        self.execute(Command::GraphicRamAddr { y, x })
+    }
+}
+
+pub trait ExecuteRead {
+    fn read(&mut self) -> u16;
+
+    fn read_bf_ac(&mut self) -> (bool, u8);
+    fn read_address_counter(&mut self) -> u8 {
+        self.read_bf_ac().1
+    }
+    fn read_busy_flag(&mut self) -> bool {
+        self.read_bf_ac().0
     }
 }

@@ -5,6 +5,7 @@ use core::array;
 
 use esp_backtrace as _;
 use esp_hal::prelude::*;
+use st7920::*;
 
 #[entry]
 fn main() -> ! {
@@ -15,7 +16,7 @@ fn main() -> ! {
     let mut byte = b'0';
     let mut read = false;
     loop {
-        let [addr, rest @ ..] = array::from_fn::<_, 10, _>(|_| lcd.read_address_counter().1);
+        let [addr, rest @ ..] = array::from_fn::<_, 10, _>(|_| lcd.read_address_counter());
         if rest.iter().any(|a| *a != addr) {
             log::error!("AC READ! {addr} != {rest:?}");
 
@@ -39,7 +40,7 @@ fn main() -> ! {
             lcd.write(data);
         }
 
-        let new = lcd.read_address_counter().1;
+        let new = lcd.read_address_counter();
         if new != addr + 1 {
             log::error!("AC INCREMENT! 0x{new:02x} != {:02x}", addr + 1);
 
@@ -51,7 +52,7 @@ fn main() -> ! {
         //  0  1  2  3  4  5  6  7  8  9 |  a  b  c  d  e  f
         // 10 11 12 13 14 15 16 17 18 19 | 1a 1b 1c 1d 1e 1f
         match addr {
-            0x9 => lcd.set_ddram_addr(0x10),
+            0x9 => lcd.ddram_addr(0x10),
             0x19 => {
                 if read {
                     byte = match byte {
@@ -63,7 +64,7 @@ fn main() -> ! {
                 } else {
                     log::info!("now read");
                 }
-                lcd.set_ddram_addr(0x0);
+                lcd.ddram_addr(0x0);
                 read = !read;
             }
             _ => (),
