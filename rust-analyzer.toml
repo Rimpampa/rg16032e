@@ -1,2 +1,2 @@
 [check]
-allTargets = false
+command = "clippy"

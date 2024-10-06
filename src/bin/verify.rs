@@ -20,7 +20,7 @@ fn main() -> ! {
         if rest.iter().any(|a| *a != addr) {
             log::error!("AC READ! {addr} != {rest:?}");
 
-            lcd.init();
+            lcd.init().unwrap();
             lcd.display_on_off(true, false, true);
             continue;
         }
@@ -31,7 +31,7 @@ fn main() -> ! {
             if check != data {
                 log::error!("RAM W/R! 0x{check:04x} != 0x{data:04x} @ 0x{addr:02x}");
 
-                lcd.init();
+                lcd.init().unwrap();
                 lcd.display_on_off(true, false, true);
                 read = false;
                 continue;
@@ -44,7 +44,7 @@ fn main() -> ! {
         if new != addr + 1 {
             log::error!("AC INCREMENT! 0x{new:02x} != {:02x}", addr + 1);
 
-            lcd.init();
+            lcd.init().unwrap();
             lcd.display_on_off(true, false, true);
             continue;
         }

@@ -1,10 +1,7 @@
 #![no_std]
 #![feature(type_alias_impl_trait)]
 
-use esp_hal::{
-    clock::ClockControl, delay::Delay, gpio::Io, peripherals::Peripherals, rng::Rng,
-    system::SystemControl,
-};
+use esp_hal::{delay::Delay, gpio::Io, rng::Rng};
 
 pub type Driver = st7920::Driver<
     impl st7920::command::Execute + st7920::command::ExecuteRead,
@@ -12,11 +9,9 @@ pub type Driver = st7920::Driver<
 >;
 
 pub fn setup() -> (Driver, Delay, Rng) {
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
+    let peripherals = esp_hal::init(esp_hal::Config::default());
 
-    let clocks = ClockControl::max(system.clock_control).freeze();
-    let delay = Delay::new(&clocks);
+    let delay = Delay::new();
     let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let rng = Rng::new(peripherals.RNG);
 
@@ -35,7 +30,7 @@ pub fn setup() -> (Driver, Delay, Rng) {
         timer: st7920::esp::now(),
     };
 
-    lcd.init();
+    lcd.init().unwrap();
 
     (lcd, delay, rng)
 }

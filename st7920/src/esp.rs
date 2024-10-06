@@ -1,16 +1,15 @@
-use embedded_hal::digital::{InputPin, OutputPin};
 use esp_hal::{gpio, peripheral::Peripheral};
-use gpio::{AnyFlex as AnyIo, AnyOutput as AnyOut};
+use gpio::{Flex, Output};
 
 use fugit::ExtU32;
 
 use crate::hal::Timer;
 use crate::parallel::{Interface, Interface4Bit, Interface8Bit};
 
-pub trait In = Peripheral<P: gpio::InputPin + gpio::CreateErasedPin> + 'static;
-pub trait Out = Peripheral<P: gpio::OutputPin + gpio::CreateErasedPin> + 'static;
+pub trait In = Peripheral<P: gpio::InputPin> + 'static;
+pub trait Out = Peripheral<P: gpio::OutputPin> + 'static;
 
-pub use esp_hal::time::current_time as now;
+pub use esp_hal::time::now;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -36,17 +35,17 @@ pub fn parallel_4bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface4Bit<AnyOut<'a>, AnyIo<'a>> {
+) -> Interface4Bit<Output<'a>, Flex<'a>> {
     use gpio::Level::Low;
     Interface {
-        rs: AnyOut::new(rs, Low),
-        rw: AnyOut::new(rw, Low),
-        e: AnyOut::new(e, Low),
+        rs: Output::new(rs, Low),
+        rw: Output::new(rw, Low),
+        e: Output::new(e, Low),
         bus: [
-            AnyIo::new(db4),
-            AnyIo::new(db5),
-            AnyIo::new(db6),
-            AnyIo::new(db7),
+            Flex::new(db4),
+            Flex::new(db5),
+            Flex::new(db6),
+            Flex::new(db7),
         ],
     }
 }
@@ -63,21 +62,21 @@ pub fn parallel_8bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface8Bit<AnyOut<'a>, AnyIo<'a>> {
+) -> Interface8Bit<Output<'a>, Flex<'a>> {
     use gpio::Level::Low;
     Interface {
-        rs: AnyOut::new(rs, Low),
-        rw: AnyOut::new(rw, Low),
-        e: AnyOut::new(e, Low),
+        rs: Output::new(rs, Low),
+        rw: Output::new(rw, Low),
+        e: Output::new(e, Low),
         bus: [
-            AnyIo::new(db0),
-            AnyIo::new(db1),
-            AnyIo::new(db2),
-            AnyIo::new(db3),
-            AnyIo::new(db4),
-            AnyIo::new(db5),
-            AnyIo::new(db6),
-            AnyIo::new(db7),
+            Flex::new(db0),
+            Flex::new(db1),
+            Flex::new(db2),
+            Flex::new(db3),
+            Flex::new(db4),
+            Flex::new(db5),
+            Flex::new(db6),
+            Flex::new(db7),
         ],
     }
 }
