@@ -153,25 +153,32 @@ impl Command {
 }
 
 pub trait Execute {
-    fn execute(&mut self, command: Command);
+    type Error;
 
-    fn write(&mut self, data: u16) {
+    fn execute(&mut self, command: Command) -> Result<(), Self::Error>;
+
+    fn write(&mut self, data: u16) -> Result<(), Self::Error> {
         self.execute(Command::Write(data))
     }
 
-    fn clear(&mut self) {
+    fn clear(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::Clear)
     }
 
-    fn home(&mut self) {
+    fn home(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::Home)
     }
 
-    fn entry_mode(&mut self, increment: bool, shift: bool) {
+    fn entry_mode(&mut self, increment: bool, shift: bool) -> Result<(), Self::Error> {
         self.execute(Command::EntryMode { increment, shift })
     }
 
-    fn display_on_off(&mut self, display: bool, cursor: bool, blink: bool) {
+    fn display_on_off(
+        &mut self,
+        display: bool,
+        cursor: bool,
+        blink: bool,
+    ) -> Result<(), Self::Error> {
         self.execute(Command::DisplayOnOff {
             display,
             cursor,
@@ -179,63 +186,65 @@ pub trait Execute {
         })
     }
 
-    fn cursor_display_ctrl(&mut self, sc: bool, rl: bool) {
+    fn cursor_display_ctrl(&mut self, sc: bool, rl: bool) -> Result<(), Self::Error> {
         self.execute(Command::CursorDisplayCtrl { sc, rl })
     }
 
-    fn select_basic(&mut self) {
+    fn select_basic(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::SelectBasic)
     }
 
-    fn cgram_addr(&mut self, addr: u8) {
+    fn cgram_addr(&mut self, addr: u8) -> Result<(), Self::Error> {
         self.execute(Command::CgRamAddr(addr))
     }
 
-    fn ddram_addr(&mut self, addr: u8) {
+    fn ddram_addr(&mut self, addr: u8) -> Result<(), Self::Error> {
         self.execute(Command::DdRamAddr(addr))
     }
 
-    fn stand_by(&mut self) {
+    fn stand_by(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::StandBy)
     }
 
-    fn enable_scroll(&mut self) {
+    fn enable_scroll(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::EnableScroll)
     }
 
-    fn enable_cgram(&mut self) {
+    fn enable_cgram(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::EnableCgRam)
     }
 
-    fn reverse(&mut self, line: u8) {
+    fn reverse(&mut self, line: u8) -> Result<(), Self::Error> {
         self.execute(Command::Reverse(line))
     }
 
-    fn select_extended(&mut self) {
+    fn select_extended(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::SelectExtended)
     }
 
-    fn select_graphic(&mut self) {
+    fn select_graphic(&mut self) -> Result<(), Self::Error> {
         self.execute(Command::SelectGraphic)
     }
 
-    fn scroll_offset(&mut self, offset: u8) {
+    fn scroll_offset(&mut self, offset: u8) -> Result<(), Self::Error> {
         self.execute(Command::ScrollOffset(offset))
     }
 
-    fn graphic_ram_addr(&mut self, x: u8, y: u8) {
+    fn graphic_ram_addr(&mut self, x: u8, y: u8) -> Result<(), Self::Error> {
         self.execute(Command::GraphicRamAddr { y, x })
     }
 }
 
 pub trait ExecuteRead {
-    fn read(&mut self) -> u16;
+    type Error;
 
-    fn read_bf_ac(&mut self) -> (bool, u8);
-    fn read_address_counter(&mut self) -> u8 {
-        self.read_bf_ac().1
+    fn read(&mut self) -> Result<u16, Self::Error>;
+
+    fn read_bf_ac(&mut self) -> Result<(bool, u8), Self::Error>;
+    fn read_address_counter(&mut self) -> Result<u8, Self::Error> {
+        Ok(self.read_bf_ac()?.1)
     }
-    fn read_busy_flag(&mut self) -> bool {
-        self.read_bf_ac().0
+    fn read_busy_flag(&mut self) -> Result<bool, Self::Error> {
+        Ok(self.read_bf_ac()?.0)
     }
 }

@@ -1,9 +1,10 @@
+use embedded_hal::digital::{InputPin, OutputPin};
 use esp_hal::{gpio, peripheral::Peripheral};
 use gpio::{AnyFlex as AnyIo, AnyOutput as AnyOut};
 
 use fugit::ExtU32;
 
-use crate::hal::{InputPin, OutputPin, Timer};
+use crate::hal::Timer;
 use crate::parallel::{Interface, Interface4Bit, Interface8Bit};
 
 pub trait In = Peripheral<P: gpio::InputPin + gpio::CreateErasedPin> + 'static;
@@ -22,26 +23,6 @@ impl Timer for Instant {
 
     fn expired(&mut self) -> bool {
         now() < *self
-    }
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-impl OutputPin for AnyOut<'_> {
-    fn write(&mut self, level: bool) {
-        self.set_level(level.into());
-    }
-}
-
-impl OutputPin for AnyIo<'_> {
-    fn write(&mut self, level: bool) {
-        self.set_level(level.into());
-    }
-}
-
-impl InputPin for AnyIo<'_> {
-    fn read(&mut self) -> bool {
-        self.is_high()
     }
 }
 

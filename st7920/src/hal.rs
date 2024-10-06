@@ -1,17 +1,9 @@
 //! Super-minimal Hardware Abstraction Layer
 
-/// Generic read pin
-pub trait InputPin {
-    fn read(&mut self) -> bool;
-}
-
-/// Generic output pin
-pub trait OutputPin {
-    fn write(&mut self, level: bool);
-}
+pub use embedded_hal::digital::{InputPin, OutputPin};
 
 /// Generic input/output pin
-pub trait IoPin = InputPin + OutputPin;
+pub trait IoPin<E> = InputPin<Error = E> + OutputPin<Error = E>;
 
 /// A [`StopWatch`] measures time (in microseconds) since when it's started
 ///
