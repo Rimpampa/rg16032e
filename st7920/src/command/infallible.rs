@@ -14,6 +14,10 @@ pub trait Execute: super::Execute<Error: sealed::Infallible> {
     fn select_basic(&mut self);
     fn cgram_addr(&mut self, addr: u8);
     fn ddram_addr(&mut self, addr: u8);
+}
+
+pub trait ExecuteExt: super::ext::Execute<Error: sealed::Infallible> {
+    fn execute(&mut self, command: super::ext::Command);
     fn stand_by(&mut self);
     fn enable_scroll(&mut self);
     fn enable_cgram(&mut self);
@@ -71,38 +75,6 @@ impl<E: super::Execute<Error: sealed::Infallible>> Execute for E {
     fn ddram_addr(&mut self, addr: u8) {
         super::Execute::ddram_addr(self, addr).unwrap()
     }
-
-    fn stand_by(&mut self) {
-        super::Execute::stand_by(self).unwrap()
-    }
-
-    fn enable_scroll(&mut self) {
-        super::Execute::enable_scroll(self).unwrap()
-    }
-
-    fn enable_cgram(&mut self) {
-        super::Execute::enable_cgram(self).unwrap()
-    }
-
-    fn reverse(&mut self, line: u8) {
-        super::Execute::reverse(self, line).unwrap()
-    }
-
-    fn select_extended(&mut self) {
-        super::Execute::select_extended(self).unwrap()
-    }
-
-    fn select_graphic(&mut self) {
-        super::Execute::select_graphic(self).unwrap()
-    }
-
-    fn scroll_offset(&mut self, offset: u8) {
-        super::Execute::scroll_offset(self, offset).unwrap()
-    }
-
-    fn graphic_ram_addr(&mut self, x: u8, y: u8) {
-        super::Execute::graphic_ram_addr(self, x, y).unwrap()
-    }
 }
 
 impl<E: super::ExecuteRead<Error: sealed::Infallible>> ExecuteRead for E {
@@ -120,5 +92,43 @@ impl<E: super::ExecuteRead<Error: sealed::Infallible>> ExecuteRead for E {
 
     fn read_busy_flag(&mut self) -> bool {
         super::ExecuteRead::read_busy_flag(self).unwrap()
+    }
+}
+
+impl<E: super::ext::Execute<Error: sealed::Infallible>> ExecuteExt for E {
+    fn execute(&mut self, command: super::ext::Command) {
+        super::ext::Execute::execute_ext(self, command).unwrap()
+    }
+
+    fn stand_by(&mut self) {
+        super::ext::Execute::stand_by(self).unwrap()
+    }
+
+    fn enable_scroll(&mut self) {
+        super::ext::Execute::enable_scroll(self).unwrap()
+    }
+
+    fn enable_cgram(&mut self) {
+        super::ext::Execute::enable_cgram(self).unwrap()
+    }
+
+    fn reverse(&mut self, line: u8) {
+        super::ext::Execute::reverse(self, line).unwrap()
+    }
+
+    fn select_extended(&mut self) {
+        super::ext::Execute::select_extended(self).unwrap()
+    }
+
+    fn select_graphic(&mut self) {
+        super::ext::Execute::select_graphic(self).unwrap()
+    }
+
+    fn scroll_offset(&mut self, offset: u8) {
+        super::ext::Execute::scroll_offset(self, offset).unwrap()
+    }
+
+    fn graphic_ram_addr(&mut self, x: u8, y: u8) {
+        super::ext::Execute::graphic_ram_addr(self, x, y).unwrap()
     }
 }

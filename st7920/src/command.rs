@@ -1,3 +1,4 @@
+pub mod ext;
 pub mod infallible;
 
 fn bit<T: Into<u8>>(v: T, bit: u8) -> u8 {
@@ -8,7 +9,6 @@ fn bit<T: Into<u8>>(v: T, bit: u8) -> u8 {
 pub enum Command {
     /// Write into the currently selected RAM
     Write(u16),
-    // - - - - - - -BASIC - - - - - - -
     /// Clear the contents of the display.
     ///
     /// Instruction Set: **Basic**
@@ -74,45 +74,6 @@ pub enum Command {
     /// After sending this command every read and write operation
     /// happens on the DDRAM
     DdRamAddr(u8),
-    // - - - - - - EXTENDED - - - - - -
-    StandBy,
-    /// Enable the [`ScrollOffset`](Command::ScrollOffset) command
-    ///
-    /// Instruction Set: **Extended**
-    EnableScroll,
-    /// Select the Character Generator RAM (CGRAM)
-    ///
-    /// Instruction Set: **Extended**
-    EnableCgRam,
-    /// Reverse the pixels of the given line
-    ///
-    /// Instruction Set: **Extended**
-    ///
-    /// Only one line at the time can be reversed.
-    /// The first time this command is sent the given line
-    /// is reversed, while the second time it returns to normal
-    /// (no matter the given address).
-    Reverse(u8),
-    /// Select the _Extended instruction set_
-    SelectExtended,
-    /// Select the _Graphic instruction set_
-    ///
-    /// > When going from the _Basic instruct set_ to the _Graphic_ one,
-    /// > the [`SelectExtended`](Command::SelectExtended) command must be run first.
-    SelectGraphic,
-    /// Set the vertical scroll offset
-    ///
-    /// Instruction Set: **Extended**
-    ///
-    /// > Make sure to run the [`SelectScroll`](Command::ScrollOffset) command first.
-    ScrollOffset(u8),
-    /// Set the Graphic RAM address
-    ///
-    /// Instruction Set: **Graphic**
-    GraphicRamAddr {
-        y: u8,
-        x: u8,
-    },
 }
 
 impl Command {
@@ -122,9 +83,9 @@ impl Command {
         1_600
     }
 
-    pub fn into_bytes(self) -> [u8; 2] {
+    pub fn into_byte(self) -> u8 {
         use Command::*;
-        let byte = match self {
+        match self {
             Write(_) => unreachable!(),
             Clear => 0b1,
             Home => 0b10,
@@ -141,16 +102,7 @@ impl Command {
             SelectBasic => 0b100000,
             CgRamAddr(addr) => 0b01000000 | (addr & 0b0111111),
             DdRamAddr(addr) => 0b10000000 | (addr & 0b1111111),
-            StandBy => 0b1,
-            EnableScroll => 0b11,
-            EnableCgRam => 0b10,
-            Reverse(line) => 0b100 | (line & 0b11),
-            SelectExtended => 0b100100,
-            SelectGraphic => 0b100110,
-            ScrollOffset(offset) => 0b1000000 | (offset & 0b11111),
-            GraphicRamAddr { y, x } => return [y & 0b1111, x & 0b111111].map(|b| 0b10000000 | b),
-        };
-        [byte, 0]
+        }
     }
 }
 
@@ -202,38 +154,6 @@ pub trait Execute {
 
     fn ddram_addr(&mut self, addr: u8) -> Result<(), Self::Error> {
         self.execute(Command::DdRamAddr(addr))
-    }
-
-    fn stand_by(&mut self) -> Result<(), Self::Error> {
-        self.execute(Command::StandBy)
-    }
-
-    fn enable_scroll(&mut self) -> Result<(), Self::Error> {
-        self.execute(Command::EnableScroll)
-    }
-
-    fn enable_cgram(&mut self) -> Result<(), Self::Error> {
-        self.execute(Command::EnableCgRam)
-    }
-
-    fn reverse(&mut self, line: u8) -> Result<(), Self::Error> {
-        self.execute(Command::Reverse(line))
-    }
-
-    fn select_extended(&mut self) -> Result<(), Self::Error> {
-        self.execute(Command::SelectExtended)
-    }
-
-    fn select_graphic(&mut self) -> Result<(), Self::Error> {
-        self.execute(Command::SelectGraphic)
-    }
-
-    fn scroll_offset(&mut self, offset: u8) -> Result<(), Self::Error> {
-        self.execute(Command::ScrollOffset(offset))
-    }
-
-    fn graphic_ram_addr(&mut self, x: u8, y: u8) -> Result<(), Self::Error> {
-        self.execute(Command::GraphicRamAddr { y, x })
     }
 }
 

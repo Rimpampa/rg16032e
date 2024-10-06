@@ -3,10 +3,8 @@
 
 use esp_hal::{delay::Delay, gpio::Io, rng::Rng};
 
-pub type Driver = st7920::Driver<
-    impl st7920::command::infallible::Execute + st7920::command::infallible::ExecuteRead,
-    impl st7920::hal::Timer,
->;
+use st7920::command::infallible::*;
+pub type Driver = st7920::Driver<impl Execute + ExecuteExt + ExecuteRead, impl st7920::hal::Timer>;
 
 pub fn setup() -> (Driver, Delay, Rng) {
     let peripherals = esp_hal::init(esp_hal::Config::default());

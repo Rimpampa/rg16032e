@@ -39,6 +39,15 @@ impl<B: command::Execute, T: hal::Timer> command::Execute for Driver<B, T> {
     }
 }
 
+impl<B: command::ext::Execute, T: hal::Timer> command::ext::Execute for Driver<B, T> {
+    fn execute_ext(&mut self, command: command::ext::Command) -> Result<(), B::Error> {
+        self.timer.complete();
+        self.bus.execute_ext(command)?;
+        self.timer.program(command.execution_time());
+        Ok(())
+    }
+}
+
 impl<B: command::ExecuteRead, T: hal::Timer> command::ExecuteRead for Driver<B, T> {
     type Error = B::Error;
 

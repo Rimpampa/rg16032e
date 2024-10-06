@@ -11,7 +11,7 @@ use core::convert::identity;
 use embedded_hal::digital::PinState::{High, Low};
 
 use crate::{
-    command::{Command, Execute, ExecuteRead},
+    command::{ext, Command, Execute, ExecuteRead},
     hal::{IoPin, OutputPin},
 };
 
@@ -228,13 +228,20 @@ impl<O: Output> Execute for O {
     type Error = O::Error;
 
     fn execute(&mut self, command: Command) -> Result<(), Self::Error> {
-        use Command::*;
-
-        if let Write(data) = command {
+        if let Command::Write(data) = command {
             self.select_ram_write()?;
             return self.write_u16(data);
         }
 
+        self.select_command()?;
+
+        self.write_u8(command.into_byte())?;
+        Ok(())
+    }
+}
+
+impl<O: Output> ext::Execute for O {
+    fn execute_ext(&mut self, command: ext::Command) -> Result<(), Self::Error> {
         self.select_command()?;
 
         let [first, second] = command.into_bytes();
