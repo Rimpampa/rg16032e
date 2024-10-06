@@ -5,8 +5,6 @@ pub mod command;
 pub mod hal;
 pub mod parallel;
 
-pub use command::{Execute, ExecuteRead};
-
 #[cfg(feature = "esp")]
 pub mod esp;
 
@@ -15,7 +13,7 @@ pub struct Driver<Bus, Timer> {
     pub timer: Timer,
 }
 
-impl<B: Execute, T: hal::Timer> Driver<B, T> {
+impl<B: command::Execute, T: hal::Timer> Driver<B, T> {
     pub fn init(&mut self) -> Result<(), B::Error> {
         self.timer.program(80_000);
         self.bus.select_basic()?;
@@ -30,7 +28,7 @@ impl<B: Execute, T: hal::Timer> Driver<B, T> {
     }
 }
 
-impl<B: Execute, T: hal::Timer> Execute for Driver<B, T> {
+impl<B: command::Execute, T: hal::Timer> command::Execute for Driver<B, T> {
     type Error = B::Error;
 
     fn execute(&mut self, command: command::Command) -> Result<(), B::Error> {
@@ -41,7 +39,7 @@ impl<B: Execute, T: hal::Timer> Execute for Driver<B, T> {
     }
 }
 
-impl<B: ExecuteRead, T: hal::Timer> ExecuteRead for Driver<B, T> {
+impl<B: command::ExecuteRead, T: hal::Timer> command::ExecuteRead for Driver<B, T> {
     type Error = B::Error;
 
     fn read(&mut self) -> Result<u16, B::Error> {

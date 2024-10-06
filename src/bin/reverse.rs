@@ -3,7 +3,7 @@
 
 use esp_backtrace as _;
 use esp_hal::prelude::*;
-use st7920::*;
+use st7920::command::infallible::*;
 
 #[entry]
 fn main() -> ! {

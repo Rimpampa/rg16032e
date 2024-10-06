@@ -4,7 +4,7 @@
 use esp_hal::{delay::Delay, gpio::Io, rng::Rng};
 
 pub type Driver = st7920::Driver<
-    impl st7920::command::Execute + st7920::command::ExecuteRead,
+    impl st7920::command::infallible::Execute + st7920::command::infallible::ExecuteRead,
     impl st7920::hal::Timer,
 >;
 

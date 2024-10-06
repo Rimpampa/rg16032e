@@ -1,3 +1,5 @@
+pub mod infallible;
+
 fn bit<T: Into<u8>>(v: T, bit: u8) -> u8 {
     v.into() << bit
 }
