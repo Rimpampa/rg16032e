@@ -1,9 +1,19 @@
 //! Super-minimal Hardware Abstraction Layer
 
-pub use embedded_hal::digital::{InputPin, OutputPin};
+pub use embedded_hal::digital::{ErrorType, InputPin, OutputPin};
+
+/// Generic output pin
+pub trait OutPin: ErrorType + OutputPin {
+    fn set_as_output(&mut self) -> Result<(), Self::Error>;
+}
+
+/// Generic input pin
+pub trait InPin: ErrorType + InputPin {
+    fn set_as_input(&mut self) -> Result<(), Self::Error>;
+}
 
 /// Generic input/output pin
-pub trait IoPin<E> = InputPin<Error = E> + OutputPin<Error = E>;
+pub trait IoPin = InPin + OutPin;
 
 /// A [`StopWatch`] measures time (in microseconds) since when it's started
 ///
@@ -38,4 +48,13 @@ pub trait Timer {
     fn complete(&mut self) {
         while !self.expired() {}
     }
+    /// Wait for the given amount of microseconds
+    fn delay(&mut self, duration: u32) {
+        self.program(duration);
+        self.complete();
+    }
+}
+
+pub trait HasTimer {
+    fn timer(&mut self) -> &mut impl Timer;
 }

@@ -5,7 +5,7 @@ use core::array;
 
 use esp_backtrace as _;
 use esp_hal::prelude::*;
-use st7920::command::infallible::*;
+use st7920::{command::infallible::*, Init};
 
 #[entry]
 fn main() -> ! {

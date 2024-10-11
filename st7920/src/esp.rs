@@ -1,10 +1,10 @@
+use esp_hal::gpio::{Flex, Input, Output, Pull};
 use esp_hal::{gpio, peripheral::Peripheral};
-use gpio::{Flex, Output};
 
 use fugit::ExtU32;
 
-use crate::hal::Timer;
-use crate::parallel::{Interface, Interface4Bit, Interface8Bit};
+use crate::hal::{InPin, OutPin, Timer};
+use crate::parallel::interface::{Interface, Interface4Bit, Interface8Bit};
 
 pub trait In = Peripheral<P: gpio::InputPin> + 'static;
 pub trait Out = Peripheral<P: gpio::OutputPin> + 'static;
@@ -21,7 +21,35 @@ impl Timer for Instant {
     }
 
     fn expired(&mut self) -> bool {
-        now() < *self
+        now() > *self
+    }
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+impl InPin for Flex<'_> {
+    fn set_as_input(&mut self) -> Result<(), Self::Error> {
+        self.set_as_input(Pull::None);
+        Ok(())
+    }
+}
+
+impl OutPin for Flex<'_> {
+    fn set_as_output(&mut self) -> Result<(), Self::Error> {
+        self.set_as_output();
+        Ok(())
+    }
+}
+
+impl InPin for Input<'_> {
+    fn set_as_input(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
+
+impl OutPin for Output<'_> {
+    fn set_as_output(&mut self) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 
@@ -35,7 +63,7 @@ pub fn parallel_4bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface4Bit<Output<'a>, Flex<'a>> {
+) -> Interface4Bit<Output<'a>, Flex<'a>, Instant> {
     use gpio::Level::Low;
     Interface {
         rs: Output::new(rs, Low),
@@ -47,6 +75,7 @@ pub fn parallel_4bit<'a>(
             Flex::new(db6),
             Flex::new(db7),
         ],
+        timer: now(),
     }
 }
 
@@ -62,7 +91,7 @@ pub fn parallel_8bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface8Bit<Output<'a>, Flex<'a>> {
+) -> Interface8Bit<Output<'a>, Flex<'a>, Instant> {
     use gpio::Level::Low;
     Interface {
         rs: Output::new(rs, Low),
@@ -78,5 +107,6 @@ pub fn parallel_8bit<'a>(
             Flex::new(db6),
             Flex::new(db7),
         ],
+        timer: now(),
     }
 }
