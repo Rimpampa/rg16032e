@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 embedded-hal = "1.0.0"
 
 [dependencies.esp-hal]
-git = "https://github.com/esp-rs/esp-hal.git"
+version = "0.21.0"
 optional = true
 
 [dependencies.fugit]
