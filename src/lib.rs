@@ -3,7 +3,7 @@
 
 use esp_hal::{delay::Delay, gpio::Io, rng::Rng};
 
-use st7920::{command::infallible::*, Init};
+use st7920::{infallible::*, Init};
 
 pub type Driver = impl Init<Error: core::fmt::Debug> + ExecuteExt + ExecuteRead;
 

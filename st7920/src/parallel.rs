@@ -8,8 +8,8 @@
 
 use core::convert::identity;
 
-use crate::command::{ext, Command, Execute, ExecuteRead};
 use crate::hal::{HasTimer, Timer};
+use crate::{ext, Command, Execute, ExecuteRead};
 
 pub mod interface;
 pub use interface::{Interface4Bit, Interface8Bit};
