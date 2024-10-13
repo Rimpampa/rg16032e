@@ -7,7 +7,7 @@ use st7920::infallible::*;
 
 #[entry]
 fn main() -> ! {
-    let (mut lcd, delay, mut rng) = rg16032e::setup();
+    let (mut lcd, _, delay, mut rng) = rg16032e::setup();
 
     lcd.cgram_addr(0);
     for _ in 0..4 {

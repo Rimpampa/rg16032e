@@ -1,10 +1,12 @@
-use esp_hal::gpio::{Flex, Input, Output, Pull};
+use esp_hal::gpio::{Flex, Input, NoPin, Output, PeripheralOutput, Pull};
+use esp_hal::spi::master::{Instance, Spi};
+use esp_hal::spi::{FullDuplexMode, SpiMode};
 use esp_hal::{gpio, peripheral::Peripheral};
 
-use fugit::ExtU32;
+use fugit::{ExtU32, RateExtU32};
 
 use crate::hal::{InPin, OutPin, Timer};
-use crate::parallel::interface::{Interface, Interface4Bit, Interface8Bit};
+use crate::{parallel::interface as parallel, serial};
 
 pub trait In = Peripheral<P: gpio::InputPin> + 'static;
 pub trait Out = Peripheral<P: gpio::OutputPin> + 'static;
@@ -63,9 +65,9 @@ pub fn parallel_4bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface4Bit<Output<'a>, Flex<'a>, Instant> {
+) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, Instant> {
     use gpio::Level::Low;
-    Interface {
+    parallel::Interface {
         rs: Output::new(rs, Low),
         rw: Output::new(rw, Low),
         e: Output::new(e, Low),
@@ -91,9 +93,9 @@ pub fn parallel_8bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> Interface8Bit<Output<'a>, Flex<'a>, Instant> {
+) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, Instant> {
     use gpio::Level::Low;
-    Interface {
+    parallel::Interface {
         rs: Output::new(rs, Low),
         rw: Output::new(rw, Low),
         e: Output::new(e, Low),
@@ -109,4 +111,15 @@ pub fn parallel_8bit<'a>(
         ],
         timer: now(),
     }
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+pub fn serial<'a, I: Instance + 'a>(
+    spi: impl Peripheral<P = I> + 'a,
+    mosi: impl Peripheral<P: PeripheralOutput> + 'a,
+    sck: impl Peripheral<P: PeripheralOutput> + 'a,
+) -> serial::Interface<Spi<'a, I, FullDuplexMode>, Instant> {
+    let spi = Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, NoPin);
+    serial::Interface { spi, timer: now() }
 }
