@@ -1,0 +1,12 @@
+[package]
+name = "examples"
+version = "0.1.0"
+authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+log = "0.4.21"
+
+[dependencies.st7920]
+path = ".."

@@ -1,0 +1,41 @@
+[package]
+name = "esp32"
+version = "0.1.0"
+authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+fugit = "0.3.7"
+log = "0.4.22"
+
+[dependencies.examples]
+path = "../examples"
+
+[dependencies.st7920]
+path = ".."
+features = ["esp"]
+
+[dependencies.esp-println]
+version = "0.10.0"
+features = ["esp32", "log"]
+
+[dependencies.esp-backtrace]
+version = "0.13.0"
+features = ["esp32", "exception-handler", "panic-handler", "println"]
+
+[dependencies.esp-hal]
+version = "0.21.0"
+features = ["esp32"]
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+debug = 2
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 's'
+overflow-checks = false

@@ -1,45 +1,28 @@
 [package]
-name = "rg16032e"
+name = "st7920"
 version = "0.1.0"
 authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [workspace]
-members = ["st7920"]
-
-[dependencies.st7920]
-path = "st7920"
-features = ["esp"]
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+members = ["examples", "esp32"]
 
 [dependencies]
-either = { version = "1.13.0", default-features = false }
+embedded-hal = "1.0.0"
 log = "0.4.21"
 
-[dependencies.esp-println]
-version = "0.10.0"
-features = ["esp32", "log"]
-
-[dependencies.esp-backtrace]
-version = "0.13.0"
-features = ["esp32", "exception-handler", "panic-handler", "println"]
+[dependencies.either]
+version = "1.13.0"
+default-features = false
 
 [dependencies.esp-hal]
 version = "0.21.0"
-features = ["esp32"]
+optional = true
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+[dependencies.fugit]
+version = "0.3.7"
+optional = true
 
-[profile.dev]
-opt-level = "s"
-
-[profile.release]
-codegen-units = 1
-debug = 2
-debug-assertions = false
-incremental = false
-lto = 'fat'
-opt-level = 's'
-overflow-checks = false
+[features]
+esp = ["dep:esp-hal", "dep:fugit"]

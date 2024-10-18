@@ -58,3 +58,7 @@ pub trait Timer {
 pub trait HasTimer {
     fn timer(&mut self) -> &mut impl Timer;
 }
+
+pub trait Rng {
+    fn random(&mut self) -> u32;
+}
