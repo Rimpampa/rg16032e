@@ -13,7 +13,7 @@ log = "0.4.22"
 path = "../examples"
 
 [dependencies.st7920]
-path = ".."
+path = "../st7920"
 features = ["esp"]
 
 [dependencies.esp-println]

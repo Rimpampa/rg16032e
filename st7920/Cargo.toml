@@ -1,0 +1,25 @@
+[package]
+name = "st7920"
+version = "0.1.0"
+authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+embedded-hal = "1.0.0"
+log = "0.4.21"
+
+[dependencies.either]
+version = "1.13.0"
+default-features = false
+
+[dependencies.esp-hal]
+version = "0.21.0"
+optional = true
+
+[dependencies.fugit]
+version = "0.3.7"
+optional = true
+
+[features]
+esp = ["dep:esp-hal", "dep:fugit"]

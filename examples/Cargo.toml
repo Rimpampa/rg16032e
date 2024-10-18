@@ -9,4 +9,4 @@ license = "MIT OR Apache-2.0"
 log = "0.4.21"
 
 [dependencies.st7920]
-path = ".."
+path = "../st7920"
