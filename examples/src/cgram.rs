@@ -1,12 +1,9 @@
 use st7920::{
     hal::{Rng, Timer},
-    Execute, ExecuteRead,
+    Execute,
 };
 
-pub fn run<E, Lcd>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, E>
-where
-    Lcd: Execute<Error = E> + ExecuteRead<Error = E>,
-{
+pub fn run<Lcd: Execute>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, Lcd::Error> {
     lcd.cgram_addr(0)?;
     for _ in 0..4 {
         lcd.write(0b0011001100110011)?;
@@ -32,11 +29,10 @@ where
     }
 
     lcd.ddram_addr(0)?;
-    loop {
+    let indices = [0, 0x10].map(|s| s..=s + 0xa).into_iter().flatten();
+    for address in indices.cycle() {
         lcd.write((rng.random() % 4) as u16 * 2)?;
-        //  0  1  2  3  4  5  6  7  8  9 |  a  b  c  d  e  f
-        // 10 11 12 13 14 15 16 17 18 19 | 1a 1b 1c 1d 1e 1f
-        match lcd.read_address_counter()? {
+        match address {
             0xa => lcd.ddram_addr(0x10)?,
             0x1a => {
                 timer.delay(500_000);
@@ -45,4 +41,6 @@ where
             _ => (),
         }
     }
+
+    unreachable!()
 }
