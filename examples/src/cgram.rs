@@ -1,4 +1,7 @@
-use st7920::{hal::{Timer, Rng}, Execute, ExecuteRead};
+use st7920::{
+    hal::{Rng, Timer},
+    Execute, ExecuteRead,
+};
 
 pub fn run<E, Lcd>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, E>
 where

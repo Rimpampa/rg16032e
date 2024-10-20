@@ -87,7 +87,9 @@ pub enum Command {
 impl Command {
     /// Execution time of the [`Command`] in microseconds
     pub fn execution_time(self) -> u32 {
-        let Self::Clear = self else { return 72 };
+        let (Self::Clear | Self::Write(_)) = self else {
+            return 72;
+        };
         1_600
     }
 

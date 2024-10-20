@@ -6,7 +6,7 @@ use esp_hal::{gpio, peripheral::Peripheral};
 
 use fugit::{ExtU32, RateExtU32};
 
-use crate::hal::{InPin, OutPin, Timer, Rng};
+use crate::hal::{InPin, OutPin, Rng, Timer};
 use crate::{parallel::interface as parallel, serial};
 
 pub trait In = Peripheral<P: gpio::InputPin> + 'static;
@@ -130,6 +130,9 @@ pub fn serial<'a, I: Instance + 'a>(
     sck: impl Peripheral<P: PeripheralOutput> + 'a,
     cs: impl Peripheral<P: PeripheralOutput> + 'a,
 ) -> serial::Interface<Spi<'a, I, FullDuplexMode>, Instant> {
-    let spi = Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, cs);
-    serial::Interface { spi, timer: now() }
+    serial::Interface {
+        spi: Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, cs),
+        timer: now(),
+        cs: NoPin,
+    }
 }
