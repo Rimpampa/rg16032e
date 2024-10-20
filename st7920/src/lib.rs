@@ -9,6 +9,9 @@ pub mod serial;
 #[cfg(feature = "esp")]
 pub mod esp;
 
+#[cfg(feature = "stm32f4")]
+pub mod stm32f4;
+
 fn bit<T: Into<u8>>(v: T, bit: u8) -> u8 {
     v.into() << bit
 }
