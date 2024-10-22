@@ -12,7 +12,7 @@ pub macro serial_lcd($p:expr, $clocks:expr, $timer:expr) {{
         $p.SPI1,
         gpioa.pa7,
         gpioa.pa5,
-        gpioa.pa9.into_push_pull_output(),
+        [gpioa.pa9.into_push_pull_output()],
         &$clocks,
         $timer,
     );

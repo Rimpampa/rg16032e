@@ -9,7 +9,7 @@ pub macro parallel_lcd($pins:expr) {{
     let mut lcd = ::st7920::esp::parallel_4bit(
         $pins.gpio32,
         $pins.gpio33,
-        $pins.gpio25,
+        [$pins.gpio25],
         $pins.gpio26,
         $pins.gpio27,
         $pins.gpio14,
@@ -22,7 +22,7 @@ pub macro parallel_lcd($pins:expr) {{
 }}
 
 pub macro serial_lcd($peripherals:expr, $pins:expr) {{
-    let mut lcd = ::st7920::esp::serial($peripherals.SPI2, $pins.gpio16, $pins.gpio4, $pins.gpio17);
+    let mut lcd = ::st7920::esp::serial($peripherals.SPI2, $pins.gpio16, $pins.gpio4, [$pins.gpio17]);
     ::st7920::Init::init(&mut lcd).unwrap();
     ::log::info!("Serial LCD initialized...");
 
