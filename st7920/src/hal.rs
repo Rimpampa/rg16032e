@@ -55,6 +55,16 @@ pub trait Timer {
     }
 }
 
+impl<T: Timer> Timer for &mut T {
+    fn program(&mut self, duration: u32) {
+        T::program(self, duration);
+    }
+
+    fn expired(&mut self) -> bool {
+        T::expired(self)
+    }
+}
+
 pub trait HasTimer {
     fn timer(&mut self) -> &mut impl Timer;
 }

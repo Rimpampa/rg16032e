@@ -1,5 +1,6 @@
 #![no_std]
 #![feature(trait_alias)]
+#![feature(get_many_mut)]
 
 pub mod ext;
 pub mod hal;

@@ -133,20 +133,20 @@ impl OutPin for Output {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub fn parallel_4bit<T: Timer>(
+pub fn parallel_4bit<T: Timer, const NUM: usize>(
     rs: impl Into<Output>,
     rw: impl Into<Output>,
-    e: impl Into<Output>,
+    e: [impl Into<Output>; NUM],
     db4: impl Into<Input>,
     db5: impl Into<Input>,
     db6: impl Into<Input>,
     db7: impl Into<Input>,
     timer: T,
-) -> parallel::Interface4Bit<Output, Flex, T> {
+) -> parallel::Interface4Bit<Output, Flex, T, NUM> {
     parallel::Interface {
         rs: rs.into(),
         rw: rw.into(),
-        e: e.into(),
+        e: e.map(Into::into),
         bus: [
             Flex::new(db4),
             Flex::new(db5),
@@ -157,10 +157,10 @@ pub fn parallel_4bit<T: Timer>(
     }
 }
 
-pub fn parallel_8bit<T: Timer>(
+pub fn parallel_8bit<T: Timer, const NUM: usize>(
     rs: impl Into<Output>,
     rw: impl Into<Output>,
-    e: impl Into<Output>,
+    e: [impl Into<Output>; NUM],
     db0: impl Into<Input>,
     db1: impl Into<Input>,
     db2: impl Into<Input>,
@@ -170,11 +170,11 @@ pub fn parallel_8bit<T: Timer>(
     db6: impl Into<Input>,
     db7: impl Into<Input>,
     timer: T,
-) -> parallel::Interface8Bit<Output, Flex, T> {
+) -> parallel::Interface8Bit<Output, Flex, T, NUM> {
     parallel::Interface {
         rs: rs.into(),
         rw: rw.into(),
-        e: e.into(),
+        e: e.map(Into::into),
         bus: [
             Flex::new(db0),
             Flex::new(db1),
@@ -191,14 +191,14 @@ pub fn parallel_8bit<T: Timer>(
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub fn serial<SPI: spi::Instance<Miso: From<NoPin>>, T: Timer>(
+pub fn serial<SPI: spi::Instance<Miso: From<NoPin>>, T: Timer, const NUM: usize>(
     spi: SPI,
     mosi: impl Into<SPI::Mosi>,
     sck: impl Into<SPI::Sck>,
-    cs: impl Into<Output>,
+    cs: [impl Into<Output>; NUM],
     clocks: &Clocks,
     timer: T,
-) -> serial::Interface<impl SpiBus, T, Output> {
+) -> serial::Interface<impl SpiBus, T, Output, NUM> {
     let mode = Mode {
         polarity: Polarity::IdleHigh,
         phase: Phase::CaptureOnSecondTransition,
@@ -206,6 +206,6 @@ pub fn serial<SPI: spi::Instance<Miso: From<NoPin>>, T: Timer>(
     serial::Interface {
         spi: Spi::new(spi, (sck, NoMiso::new(), mosi), mode, 1.MHz(), clocks),
         timer,
-        cs: cs.into(),
+        cs: cs.map(Into::into),
     }
 }

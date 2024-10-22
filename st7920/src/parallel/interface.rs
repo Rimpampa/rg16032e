@@ -4,32 +4,46 @@ use crate::hal::{HasTimer, InPin, IoPin, OutPin, Timer};
 
 use super::{Control, Input, Output};
 
-pub struct Interface<Out, InOut, Timer, const BITS: usize> {
+pub struct Interface<Out, InOut, Timer, const PINS: usize, const BITS: usize> {
     pub rs: Out,
     pub rw: Out,
-    pub e: Out,
+    pub e: [Out; PINS],
     pub bus: [InOut; BITS],
     pub timer: Timer,
 }
 
+pub type SingleInterface<'a, O, Io, T, const BITS: usize> = Interface<&'a mut O, &'a mut Io, &'a mut T, 1, BITS>;
+
+impl<O, Io, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
+    pub fn get(&mut self, idx: usize) -> Option<SingleInterface<'_, O, Io, T, B>> {
+        self.e.get_mut(idx).map(|e| Interface {
+            rs: &mut self.rs,
+            rw: &mut self.rw,
+            bus: self.bus.each_mut(),
+            timer: &mut self.timer,
+            e: [e]
+        })
+    }
+}
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-impl<O, Io, T: Timer, const B: usize> HasTimer for Interface<O, Io, T, B> {
+impl<O, Io, T: Timer, const P: usize, const B: usize> HasTimer for Interface<O, Io, T, P, B> {
     fn timer(&mut self) -> &mut impl Timer {
         &mut self.timer
     }
 }
 
-impl<O: OutputPin, Io, T: Timer, const B: usize> Control for Interface<O, Io, T, B> {
+impl<O: OutputPin, Io, T: Timer, const B: usize> Control for Interface<O, Io, T, 1, B> {
     type Error = O::Error;
 
     fn enable(&mut self) -> Result<(), Self::Error> {
         self.timer.complete();
-        self.e.set_high()
+        self.e[0].set_high()
     }
 
     fn disable(&mut self) -> Result<(), Self::Error> {
-        self.e.set_low()?;
+        self.e[0].set_low()?;
         self.timer.program(10); // Enable Cycle Time, min 1800ns
         Ok(())
     }
@@ -43,7 +57,7 @@ impl<O: OutputPin, Io, T: Timer, const B: usize> Control for Interface<O, Io, T,
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-impl<O, Io: OutPin, T, const B: usize> Interface<O, Io, T, B> {
+impl<O, Io: OutPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
     pub fn set_as_output(&mut self) -> Result<(), Io::Error> {
         self.bus.iter_mut().try_for_each(OutPin::set_as_output)
     }
@@ -57,7 +71,7 @@ impl<O, Io: OutPin, T, const B: usize> Interface<O, Io, T, B> {
     }
 }
 
-impl<O, Io: IoPin, T, const B: usize> Interface<O, Io, T, B> {
+impl<O, Io: IoPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
     pub fn set_as_input(&mut self) -> Result<(), Io::Error> {
         self.bus.iter_mut().try_for_each(InPin::set_as_input)
     }
@@ -72,9 +86,9 @@ impl<O, Io: IoPin, T, const B: usize> Interface<O, Io, T, B> {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface4Bit<Out, InOut, Timer> = Interface<Out, InOut, Timer, 4>;
+pub type Interface4Bit<Out, InOut, Timer, const PINS: usize> = Interface<Out, InOut, Timer, PINS, 4>;
 
-impl<O, Io, T> Interface4Bit<O, Io, T>
+impl<O, Io, T> Interface4Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: OutPin<Error = O::Error>,
@@ -89,7 +103,7 @@ where
     }
 }
 
-impl<O, Io, T> Interface4Bit<O, Io, T>
+impl<O, Io, T> Interface4Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: IoPin<Error = O::Error>,
@@ -103,7 +117,7 @@ where
     }
 }
 
-impl<O, Io, T> Output for Interface4Bit<O, Io, T>
+impl<O, Io, T> Output for Interface4Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: OutPin<Error = O::Error>,
@@ -115,7 +129,7 @@ where
     }
 }
 
-impl<O, Io, T> Input for Interface4Bit<O, Io, T>
+impl<O, Io, T> Input for Interface4Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: IoPin<Error = O::Error>,
@@ -129,9 +143,9 @@ where
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface8Bit<Out, InOut, Timer> = Interface<Out, InOut, Timer, 8>;
+pub type Interface8Bit<Out, InOut, Timer, const PINS: usize> = Interface<Out, InOut, Timer, PINS, 8>;
 
-impl<O, Io, T> Output for Interface8Bit<O, Io, T>
+impl<O, Io, T> Output for Interface8Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: OutPin<Error = O::Error>,
@@ -146,7 +160,7 @@ where
     }
 }
 
-impl<O, Io, T> Input for Interface8Bit<O, Io, T>
+impl<O, Io, T> Input for Interface8Bit<O, Io, T, 1>
 where
     O: OutputPin,
     Io: IoPin<Error = O::Error>,

@@ -66,20 +66,20 @@ impl OutPin for Output<'_> {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub fn parallel_4bit<'a>(
+pub fn parallel_4bit<'a, const NUM: usize>(
     rs: impl Out + 'a,
     rw: impl Out + 'a,
-    e: impl Out + 'a,
+    e: [impl Out + 'a; NUM],
     db4: impl In + Out + 'a,
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, Instant> {
+) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, Instant, NUM> {
     use gpio::Level::Low;
     parallel::Interface {
         rs: Output::new(rs, Low),
         rw: Output::new(rw, Low),
-        e: Output::new(e, Low),
+        e: e.map(|e| Output::new(e, Low)),
         bus: [
             Flex::new(db4),
             Flex::new(db5),
@@ -90,10 +90,10 @@ pub fn parallel_4bit<'a>(
     }
 }
 
-pub fn parallel_8bit<'a>(
+pub fn parallel_8bit<'a, const NUM: usize>(
     rs: impl Out + 'a,
     rw: impl Out + 'a,
-    e: impl Out + 'a,
+    e: [impl Out + 'a; NUM],
     db0: impl In + Out + 'a,
     db1: impl In + Out + 'a,
     db2: impl In + Out + 'a,
@@ -102,12 +102,12 @@ pub fn parallel_8bit<'a>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, Instant> {
+) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, Instant, NUM> {
     use gpio::Level::Low;
     parallel::Interface {
         rs: Output::new(rs, Low),
         rw: Output::new(rw, Low),
-        e: Output::new(e, Low),
+        e: e.map(|e| Output::new(e, Low)),
         bus: [
             Flex::new(db0),
             Flex::new(db1),
@@ -124,15 +124,16 @@ pub fn parallel_8bit<'a>(
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub fn serial<'a, I: Instance + 'a>(
+pub fn serial<'a, I: Instance + 'a, const NUM: usize>(
     spi: impl Peripheral<P = I> + 'a,
     mosi: impl Peripheral<P: PeripheralOutput> + 'a,
     sck: impl Peripheral<P: PeripheralOutput> + 'a,
-    cs: impl Peripheral<P: PeripheralOutput> + 'a,
-) -> serial::Interface<Spi<'a, I, FullDuplexMode>, Instant> {
+    cs: [impl Out + 'a; NUM],
+) -> serial::Interface<Spi<'a, I, FullDuplexMode>, Instant, Output<'a>, NUM> {
+    use gpio::Level::Low;
     serial::Interface {
-        spi: Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, cs),
+        spi: Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, NoPin),
         timer: now(),
-        cs: NoPin,
+        cs: cs.map(|cs| Output::new(cs, Low)),
     }
 }
