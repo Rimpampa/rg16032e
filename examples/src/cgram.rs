@@ -3,7 +3,19 @@ use st7920::{
     Execute,
 };
 
-pub fn run<Lcd: Execute>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, Lcd::Error> {
+pub fn run<Lcd, E>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, E>
+where
+    for<'a> &'a mut Lcd: Execute<Error = E>,
+{
+    setup(&mut lcd)?;
+
+    loop {
+        step(&mut lcd, &mut rng)?;
+        timer.delay(500_000);
+    }
+}
+
+pub fn setup<Lcd: Execute>(mut lcd: Lcd) -> Result<(), Lcd::Error> {
     lcd.cgram_addr(0)?;
     for _ in 0..4 {
         lcd.write(0b0011001100110011)?;
@@ -28,19 +40,17 @@ pub fn run<Lcd: Execute>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng)
         lcd.write(0b1100110011001100)?;
     }
 
-    lcd.ddram_addr(0)?;
-    let indices = [0, 0x10].map(|s| s..=s + 0xa).into_iter().flatten();
-    for address in indices.cycle() {
-        lcd.write((rng.random() % 4) as u16 * 2)?;
-        match address {
-            0xa => lcd.ddram_addr(0x10)?,
-            0x1a => {
-                timer.delay(500_000);
-                lcd.ddram_addr(0x0)?
-            }
-            _ => (),
-        }
-    }
+    Ok(())
+}
 
-    unreachable!()
+pub fn step<Lcd: Execute>(mut lcd: Lcd, mut rng: impl Rng) -> Result<(), Lcd::Error> {
+    lcd.ddram_addr(0)?;
+    for _ in 0..=0xa {
+        lcd.write((rng.random() % 4) as u16 * 2)?;
+    }
+    lcd.ddram_addr(0x10)?;
+    for _ in 0..=0xa {
+        lcd.write((rng.random() % 4) as u16 * 2)?;
+    }
+    Ok(())
 }
