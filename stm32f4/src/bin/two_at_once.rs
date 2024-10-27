@@ -16,5 +16,5 @@ impl Rng for FakeRandom {
 fn main() -> ! {
     stm32f4::setup!(_c, p, clocks, timer1, timer2);
     let lcd = stm32f4::lcd!(p, clocks, timer1);
-    examples::cgram::run(lcd, timer2, FakeRandom(0)).unwrap()
+    examples::two_at_once::run(lcd, timer2, FakeRandom(0)).unwrap()
 }

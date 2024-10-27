@@ -4,7 +4,7 @@ use embedded_hal::{digital::OutputPin, spi::SpiBus};
 use crate::{
     ext,
     hal::{HasTimer, Timer},
-    SharedBus, Command, Execute,
+    Command, Execute, SharedBus,
 };
 
 fn sync(rs: u8) -> u8 {
@@ -91,5 +91,19 @@ impl<S: SpiBus, T: Timer, C: OutputPin> ext::Execute for Interface<S, T, C, 1> {
         })?;
         self.timer.program(command.execution_time());
         Ok(())
+    }
+}
+
+impl<S: SpiBus, T: Timer, C: OutputPin> Execute for &mut Interface<S, T, C, 1> {
+    type Error = Either<S::Error, C::Error>;
+
+    fn execute(&mut self, command: Command) -> Result<(), Self::Error> {
+        Interface::<S, T, C, 1>::execute(self, command)
+    }
+}
+
+impl<S: SpiBus, T: Timer, C: OutputPin> ext::Execute for &mut Interface<S, T, C, 1> {
+    fn execute_ext(&mut self, command: ext::Command) -> Result<(), Self::Error> {
+        Interface::<S, T, C, 1>::execute_ext(self, command)
     }
 }

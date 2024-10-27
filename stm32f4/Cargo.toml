@@ -4,6 +4,20 @@ version = "0.1.0"
 authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
 edition = "2021"
 
+[features]
+parallel = [] # Not yet implemented
+serial = []
+
+two-displays = []
+
+[[bin]]
+name = "verify"
+required-features = ["parallel"]
+
+[[bin]]
+name = "two_at_once"
+required-features = ["two-displays"]
+
 [dependencies]
 cortex-m = "0.7"
 cortex-m-rt = "0.7"

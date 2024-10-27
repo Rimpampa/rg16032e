@@ -5,7 +5,8 @@
 
 use esp_backtrace as _;
 
-pub macro parallel_lcd($pins:expr) {{
+#[cfg(all(feature = "parallel", not(feature = "two-displays")))]
+pub macro lcd($peripherals:expr, $pins:expr) {{
     let mut lcd = ::st7920::esp::parallel_4bit(
         $pins.gpio32,
         $pins.gpio33,
@@ -21,9 +22,33 @@ pub macro parallel_lcd($pins:expr) {{
     lcd
 }}
 
-pub macro serial_lcd($peripherals:expr, $pins:expr) {{
-    let mut lcd = ::st7920::esp::serial($peripherals.SPI2, $pins.gpio16, $pins.gpio4, [$pins.gpio17]);
+#[cfg(all(feature = "serial", not(feature = "two-displays")))]
+pub macro lcd($peripherals:expr, $pins:expr) {{
+    let mut lcd = ::st7920::esp::serial(
+        $peripherals.SPI2,
+        $pins.gpio26,
+        $pins.gpio27,
+        [$pins.gpio14]
+    );
     ::st7920::Init::init(&mut lcd).unwrap();
+    ::log::info!("Serial LCD initialized...");
+
+    lcd
+}}
+
+#[cfg(all(feature = "serial", feature = "two-displays"))]
+pub macro lcd($peripherals:expr, $pins:expr) {{
+    let mut lcd = ::st7920::esp::serial(
+        $peripherals.SPI2,
+        $pins.gpio26,
+        $pins.gpio27,
+        [
+            ::esp_hal::gpio::Pin::degrade($pins.gpio14),
+            ::esp_hal::gpio::Pin::degrade($pins.gpio32),
+        ]
+    );
+    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 0).unwrap()).unwrap();
+    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 1).unwrap()).unwrap();
     ::log::info!("Serial LCD initialized...");
 
     lcd
