@@ -69,6 +69,18 @@ pub trait HasTimer {
     fn timer(&mut self) -> &mut impl Timer;
 }
 
+impl<T: HasTimer> HasTimer for &mut T {
+    fn timer(&mut self) -> &mut impl Timer {
+        T::timer(self)
+    }
+}
+
 pub trait Rng {
     fn random(&mut self) -> u32;
+}
+
+impl<T: Rng> Rng for &mut T {
+    fn random(&mut self) -> u32 {
+        T::random(self)
+    }
 }

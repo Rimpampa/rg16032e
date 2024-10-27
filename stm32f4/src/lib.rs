@@ -5,7 +5,8 @@
 use defmt_rtt as _;
 use panic_probe as _;
 
-pub macro serial_lcd($p:expr, $clocks:expr, $timer:expr) {{
+#[cfg(all(feature = "serial", not(feature = "two-displays")))]
+pub macro lcd($p:expr, $clocks:expr, $timer:expr) {{
     let gpioa = ::stm32f4xx_hal::gpio::GpioExt::split($p.GPIOA);
 
     let mut lcd = ::st7920::stm32f4::serial(
@@ -17,6 +18,28 @@ pub macro serial_lcd($p:expr, $clocks:expr, $timer:expr) {{
         $timer,
     );
     ::st7920::Init::init(&mut lcd).unwrap();
+    ::defmt::info!("Serial LCD initialized...");
+
+    lcd
+}}
+
+#[cfg(all(feature = "serial", feature = "two-displays"))]
+pub macro lcd($p:expr, $clocks:expr, $timer:expr) {{
+    let gpioa = ::stm32f4xx_hal::gpio::GpioExt::split($p.GPIOA);
+
+    let mut lcd = ::st7920::stm32f4::serial(
+        $p.SPI1,
+        gpioa.pa7,
+        gpioa.pa5,
+        [
+            gpioa.pa9.into_push_pull_output().erase(),
+            gpioa.pa6.into_push_pull_output().erase(),
+        ],
+        &$clocks,
+        $timer,
+    );
+    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 0).unwrap()).unwrap();
+    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 1).unwrap()).unwrap();
     ::defmt::info!("Serial LCD initialized...");
 
     lcd

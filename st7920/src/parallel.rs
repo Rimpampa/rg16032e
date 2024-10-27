@@ -101,6 +101,35 @@ pub trait Input: Control {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+impl<T: Control> Control for &mut T {
+    type Error = T::Error;
+
+    fn enable(&mut self) -> Result<(), Self::Error> {
+        T::enable(self)
+    }
+    fn disable(&mut self) -> Result<(), Self::Error> {
+        T::disable(self)
+    }
+
+    fn select(&mut self, rs: bool, rw: bool) -> Result<(), Self::Error> {
+        T::select(self, rs, rw)
+    }
+}
+
+impl<T: Output> Output for &mut T {
+    fn write_u8(&mut self, data: u8) -> Result<(), Self::Error> {
+        T::write_u8(self, data)
+    }
+}
+
+impl<T: Input> Input for &mut T {
+    fn read_u8(&mut self) -> Result<u8, Self::Error> {
+        T::read_u8(self)
+    }
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 impl<O: Output + HasTimer> Execute for O {
     type Error = O::Error;
 
