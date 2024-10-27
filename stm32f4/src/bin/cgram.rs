@@ -8,7 +8,6 @@ struct FakeRandom(u32);
 impl Rng for FakeRandom {
     fn random(&mut self) -> u32 {
         self.0 += 1;
-        self.0 %= 13;
         self.0
     }
 }
