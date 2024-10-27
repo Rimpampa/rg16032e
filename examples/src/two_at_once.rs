@@ -4,7 +4,7 @@ use st7920::{
     SharedBus,
 };
 
-pub fn run<Lcd, T, E>(mut lcd: Lcd, mut delay: impl Timer, mut rng: impl Rng) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd, mut delay: impl Timer, mut rng: impl Rng) -> Result<!, E>
 where
     Lcd: SharedBus,
     for<'a> Lcd::Interface<'a>: ExecuteExt<Error = E>,
