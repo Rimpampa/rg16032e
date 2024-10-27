@@ -1,6 +1,9 @@
 use embedded_hal::digital::OutputPin;
 
-use crate::hal::{HasTimer, InPin, IoPin, OutPin, Timer};
+use crate::{
+    hal::{HasTimer, InPin, IoPin, OutPin, Timer},
+    SharedBus,
+};
 
 use super::{Control, Input, Output};
 
@@ -12,16 +15,25 @@ pub struct Interface<Out, InOut, Timer, const PINS: usize, const BITS: usize> {
     pub timer: Timer,
 }
 
-pub type SingleInterface<'a, O, Io, T, const BITS: usize> = Interface<&'a mut O, &'a mut Io, &'a mut T, 1, BITS>;
+impl<O, Io, T, const P: usize, const B: usize> SharedBus for Interface<O, Io, T, P, B> {
+    type Interface<'a>
+        = Interface<&'a mut O, &'a mut Io, &'a mut T, 1, B>
+    where
+        O: 'a,
+        Io: 'a,
+        T: 'a;
 
-impl<O, Io, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
-    pub fn get(&mut self, idx: usize) -> Option<SingleInterface<'_, O, Io, T, B>> {
+    fn num(&self) -> usize {
+        P
+    }
+
+    fn get(&mut self, idx: usize) -> Option<Self::Interface<'_>> {
         self.e.get_mut(idx).map(|e| Interface {
             rs: &mut self.rs,
             rw: &mut self.rw,
             bus: self.bus.each_mut(),
             timer: &mut self.timer,
-            e: [e]
+            e: [e],
         })
     }
 }
@@ -86,7 +98,8 @@ impl<O, Io: IoPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface4Bit<Out, InOut, Timer, const PINS: usize> = Interface<Out, InOut, Timer, PINS, 4>;
+pub type Interface4Bit<Out, InOut, Timer, const PINS: usize> =
+    Interface<Out, InOut, Timer, PINS, 4>;
 
 impl<O, Io, T> Interface4Bit<O, Io, T, 1>
 where
@@ -143,7 +156,8 @@ where
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface8Bit<Out, InOut, Timer, const PINS: usize> = Interface<Out, InOut, Timer, PINS, 8>;
+pub type Interface8Bit<Out, InOut, Timer, const PINS: usize> =
+    Interface<Out, InOut, Timer, PINS, 8>;
 
 impl<O, Io, T> Output for Interface8Bit<O, Io, T, 1>
 where

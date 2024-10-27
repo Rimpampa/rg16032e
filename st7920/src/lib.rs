@@ -208,3 +208,13 @@ impl<T: Execute + hal::HasTimer> Init for T {
         self.entry_mode(true, false)
     }
 }
+
+pub trait SharedBus {
+    type Interface<'a>
+    where
+        Self: 'a;
+
+    fn num(&self) -> usize;
+
+    fn get(&mut self, index: usize) -> Option<Self::Interface<'_>>;
+}

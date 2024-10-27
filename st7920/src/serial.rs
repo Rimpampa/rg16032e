@@ -4,7 +4,7 @@ use embedded_hal::{digital::OutputPin, spi::SpiBus};
 use crate::{
     ext,
     hal::{HasTimer, Timer},
-    Command, Execute,
+    SharedBus, Command, Execute,
 };
 
 fn sync(rs: u8) -> u8 {
@@ -26,20 +26,32 @@ pub struct Interface<Spi, Timer, Cs, const PINS: usize> {
     pub cs: [Cs; PINS],
 }
 
-pub type SingleInterface<'a, S, T, C> = Interface<&'a mut S, &'a mut T, &'a mut C, 1>;
+impl<S, T, C, const P: usize> SharedBus for Interface<S, T, C, P> {
+    type Interface<'a>
+        = Interface<&'a mut S, &'a mut T, &'a mut C, 1>
+    where
+        C: 'a,
+        T: 'a,
+        S: 'a;
 
-impl<S, T, C, const P: usize> Interface<S, T, C, P> {
-    pub fn get(&mut self, idx: usize) -> Option<Interface<&mut S, &mut T, &mut C, 1>> {
+    fn num(&self) -> usize {
+        P
+    }
+
+    fn get(&mut self, idx: usize) -> Option<Self::Interface<'_>> {
         self.cs.get_mut(idx).map(|cs| Interface {
             spi: &mut self.spi,
             timer: &mut self.timer,
-            cs: [cs]
+            cs: [cs],
         })
     }
 }
 
 impl<S, T: Timer, C: OutputPin> Interface<S, T, C, 1> {
-    pub fn transaction<O, E>(&mut self, run: impl FnOnce(&mut S) -> Result<O, E>) -> Result<O, Either<E, C::Error>> {
+    pub fn transaction<O, E>(
+        &mut self,
+        run: impl FnOnce(&mut S) -> Result<O, E>,
+    ) -> Result<O, Either<E, C::Error>> {
         self.cs[0].set_high().map_err(Right)?;
         let result = run(&mut self.spi);
         self.timer.delay(1000);
