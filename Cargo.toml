@@ -1,4 +1,4 @@
 [workspace]
 resolver = "2"
-members = ["examples", "st7920"]
-exclude = ["esp32", "stm32f4"]
+members = [ "embedded-hal-v1","examples", "st7920"]
+exclude = ["esp32", "stm32f4", "stm32h7"]

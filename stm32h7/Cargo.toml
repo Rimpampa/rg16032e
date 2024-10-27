@@ -1,0 +1,51 @@
+[package]
+name = "stm32h7"
+version = "0.1.0"
+authors = ["Riccardo Ripanti <riccardo.ripanti01@gmail.com>"]
+edition = "2021"
+
+[features]
+parallel = [] # Not yet implemented
+serial = []
+
+two-displays = []
+
+[[bin]]
+name = "verify"
+required-features = ["parallel"]
+
+[[bin]]
+name = "two_at_once"
+required-features = ["two-displays"]
+
+[dependencies]
+cortex-m = "0.7.4"
+cortex-m-rt = "0.7.1"
+defmt = "0.3.8"
+defmt-rtt = "0.4.1"
+panic-probe = { version = "0.3.1", features = ["print-defmt"] }
+
+[dependencies.stm32h7xx-hal]
+version = "0.16.0"
+features = ["stm32h743v","rt"]
+
+[dependencies.st7920]
+path = "../st7920"
+features = ["stm32h7"]
+
+[dependencies.examples]
+path = "../examples"
+
+# Set the default for dependencies.
+[profile.dev.package."*"]
+opt-level = "s"
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+incremental = false
+debug = true
+lto = true
+opt-level = "s"

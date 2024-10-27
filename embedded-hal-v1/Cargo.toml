@@ -1,0 +1,5 @@
+[package]
+name = "embedded-hal-v1"
+
+[dependencies]
+embedded-hal = "0.2.7" # Same version used by STM32H7 HAL

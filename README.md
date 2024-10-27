@@ -25,5 +25,7 @@ application that can be implemented on the low level package.
 
 ## Low level
 
-For now the examples are being tested on a Espressif DevKitC board, so there
-is only one low-level package: `esp32-wroom-32e` (the actual MCU).
+The examples are being tested on:
+- an Espressif DevKitC board in the `esp32` directory
+- a NUCLEO-F4 in the `stm32f4` directory
+- a NUCLEO-H7 in the `stm32h7` directory
