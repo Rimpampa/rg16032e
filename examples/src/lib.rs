@@ -5,4 +5,5 @@
 pub mod cgram;
 pub mod reverse;
 pub mod scroll;
+pub mod two_at_once;
 pub mod verify;
