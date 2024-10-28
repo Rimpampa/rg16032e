@@ -1,10 +1,7 @@
-use st7920::{
-    ext::Execute as ExecuteExt,
-    hal::{Rng, Timer},
-    SharedBus,
-};
+use st7920::{ext::Execute as ExecuteExt, hal::Timer, SharedBus};
+use rand_core::RngCore;
 
-pub fn run<Lcd, E>(mut lcd: Lcd, mut delay: impl Timer, mut rng: impl Rng) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd, mut delay: impl Timer, mut rng: impl RngCore) -> Result<!, E>
 where
     Lcd: SharedBus,
     for<'a> Lcd::Interface<'a>: ExecuteExt<Error = E>,

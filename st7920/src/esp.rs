@@ -1,26 +1,17 @@
 use esp_hal::gpio::{Flex, Input, NoPin, Output, PeripheralOutput, Pull};
-use esp_hal::rng;
 use esp_hal::spi::master::{Instance, Spi};
 use esp_hal::spi::{FullDuplexMode, SpiMode};
 use esp_hal::{gpio, peripheral::Peripheral};
 
 use fugit::{ExtU32, RateExtU32};
 
-use crate::hal::{InPin, OutPin, Rng, Timer};
+use crate::hal::{InPin, OutPin, Timer};
 use crate::{parallel::interface as parallel, serial};
 
 pub trait In = Peripheral<P: gpio::InputPin> + 'static;
 pub trait Out = Peripheral<P: gpio::OutputPin> + 'static;
 
 pub use esp_hal::time::now;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-impl Rng for rng::Rng {
-    fn random(&mut self) -> u32 {
-        rng::Rng::random(self)
-    }
-}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -45,7 +45,7 @@ pub macro lcd($p:expr, $clocks:expr, $timer:expr) {{
     lcd
 }}
 
-pub macro setup($cp:ident, $dp:ident, $clocks:ident, $syst:ident, $tim1:ident) {
+pub macro setup($cp:ident, $dp:ident, $clocks:ident, $syst:ident, $tim1:ident, $rng:ident) {
     let $cp = ::cortex_m::Peripherals::take().unwrap();
     let $dp = ::stm32f4xx_hal::pac::Peripherals::take().unwrap();
 
@@ -54,4 +54,6 @@ pub macro setup($cp:ident, $dp:ident, $clocks:ident, $syst:ident, $tim1:ident) {
 
     let $syst = ::stm32f4xx_hal::timer::Timer::syst($cp.SYST, &$clocks).counter_us();
     let $tim1 = ::stm32f4xx_hal::timer::TimerExt::counter_us($dp.TIM2, &$clocks);
+
+    let $rng = ::rand_mt::Mt::new_unseeded();
 }

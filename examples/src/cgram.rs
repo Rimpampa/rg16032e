@@ -1,9 +1,7 @@
-use st7920::{
-    hal::{Rng, Timer},
-    Execute,
-};
+use st7920::{hal::Timer, Execute};
+use rand_core::RngCore;
 
-pub fn run<Lcd, E>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl Rng) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd, mut timer: impl Timer, mut rng: impl RngCore) -> Result<!, E>
 where
     for<'a> &'a mut Lcd: Execute<Error = E>,
 {
@@ -43,14 +41,14 @@ pub fn setup<Lcd: Execute>(mut lcd: Lcd) -> Result<(), Lcd::Error> {
     Ok(())
 }
 
-pub fn step<Lcd: Execute>(mut lcd: Lcd, mut rng: impl Rng) -> Result<(), Lcd::Error> {
+pub fn step<Lcd: Execute>(mut lcd: Lcd, mut rng: impl RngCore) -> Result<(), Lcd::Error> {
     lcd.ddram_addr(0)?;
     for _ in 0..=0xa {
-        lcd.write((rng.random() % 4) as u16 * 2)?;
+        lcd.write((rng.next_u32() % 4) as u16 * 2)?;
     }
     lcd.ddram_addr(0x10)?;
     for _ in 0..=0xa {
-        lcd.write((rng.random() % 4) as u16 * 2)?;
+        lcd.write((rng.next_u32() % 4) as u16 * 2)?;
     }
     Ok(())
 }

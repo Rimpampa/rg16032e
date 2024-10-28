@@ -74,13 +74,3 @@ impl<T: HasTimer> HasTimer for &mut T {
         T::timer(self)
     }
 }
-
-pub trait Rng {
-    fn random(&mut self) -> u32;
-}
-
-impl<T: Rng> Rng for &mut T {
-    fn random(&mut self) -> u32 {
-        T::random(self)
-    }
-}
