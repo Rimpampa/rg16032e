@@ -12,8 +12,9 @@ where
     let mut counter = 0;
     loop {
         super::cgram::step(lcd.get(0).unwrap(), &mut rng)?;
-        super::scroll::step(lcd.get(1).unwrap(), &mut counter)?;
-
-        delay.delay(200_000);
+        for _ in 0..5 {
+            super::scroll::step(lcd.get(1).unwrap(), &mut counter)?;
+            delay.delay(150_000);
+        }
     }
 }

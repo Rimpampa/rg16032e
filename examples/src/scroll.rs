@@ -45,10 +45,18 @@ pub fn setup<Lcd: Execute>(mut lcd: Lcd) -> Result<(), Lcd::Error> {
 }
 
 pub fn step<Lcd: Execute>(mut lcd: Lcd, counter: &mut u8) -> Result<(), Lcd::Error> {
-    lcd.scroll_offset(*counter)?;
+    lcd.scroll_offset(*counter & 0b011111)?;
 
-    *counter += 1;
-    *counter &= 0b11111;
+    match *counter & 0b100000 {
+        0b100000 => match *counter {
+            0b100000 => *counter = 1,
+            _ => *counter -= 1,
+        },
+        _ => match *counter {
+            0b011111 => *counter = 0b111110,
+            _ => *counter += 1,
+        }
+    }
 
     Ok(())
 }
