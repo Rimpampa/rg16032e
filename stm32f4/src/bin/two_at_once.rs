@@ -3,7 +3,7 @@
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    stm32f4::setup!(_c, p, clocks, timer1, timer2, rng);
-    let lcd = stm32f4::lcd!(p, clocks, timer1);
-    examples::two_at_once::run(lcd, timer2, rng).unwrap()
+    stm32f4::setup!(_c, p, clocks, clock, rng);
+    let lcd = stm32f4::lcd!(p, clocks, clock);
+    examples::two_at_once::run(lcd, clock, rng).unwrap()
 }

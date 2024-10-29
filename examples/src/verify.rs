@@ -1,10 +1,10 @@
 use core::array;
 
-use st7920::{Execute, ExecuteRead, Init};
+use st7920::{Execute, ExecuteRead};
 
 pub fn run<E, Lcd>(mut lcd: Lcd) -> Result<!, E>
 where
-    Lcd: Execute<Error = E> + ExecuteRead<Error = E> + Init<Error = E>,
+    Lcd: Execute<Error = E> + ExecuteRead<Error = E>,
 {
     lcd.display_on_off(true, false, true)?;
 

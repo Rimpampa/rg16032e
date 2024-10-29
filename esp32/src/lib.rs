@@ -16,7 +16,7 @@ pub macro lcd($peripherals:expr, $pins:expr) {{
         $pins.gpio14,
         $pins.gpio13,
     );
-    ::st7920::Init::init(&mut lcd).unwrap();
+    ::st7920::Execute::init(&mut lcd).unwrap();
     ::log::info!("Parallel LCD initialized...");
 
     lcd
@@ -30,7 +30,7 @@ pub macro lcd($peripherals:expr, $pins:expr) {{
         $pins.gpio27,
         [$pins.gpio14]
     );
-    ::st7920::Init::init(&mut lcd).unwrap();
+    ::st7920::Execute::init(&mut lcd).unwrap();
     ::log::info!("Serial LCD initialized...");
 
     lcd
@@ -47,8 +47,8 @@ pub macro lcd($peripherals:expr, $pins:expr) {{
             ::esp_hal::gpio::Pin::degrade($pins.gpio32),
         ]
     );
-    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 0).unwrap()).unwrap();
-    ::st7920::Init::init(&mut ::st7920::SharedBus::get(&mut lcd, 1).unwrap()).unwrap();
+    ::st7920::Execute::init(&mut ::st7920::SharedBus::get(&mut lcd, 0).unwrap()).unwrap();
+    ::st7920::Execute::init(&mut ::st7920::SharedBus::get(&mut lcd, 1).unwrap()).unwrap();
     ::log::info!("Serial LCD initialized...");
 
     lcd

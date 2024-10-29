@@ -90,11 +90,12 @@ pub enum Command {
 
 impl Command {
     /// Execution time of the [`Command`] in microseconds
-    pub fn execution_time(self) -> u32 {
-        let (Self::Clear | Self::Write(_)) = self else {
-            return 72;
-        };
-        1_600
+    pub fn execution_time(self) -> hal::Duration {
+        use fugit::ExtU64;
+        match self {
+            Self::Clear | Self::Write(_) => 72,
+            _ => 1_600
+        }.micros()
     }
 
     pub fn into_byte(self) -> u8 {
@@ -122,6 +123,8 @@ impl Command {
 
 pub trait Execute {
     type Error;
+
+    fn init(&mut self) -> Result<(), Self::Error>;
 
     fn execute(&mut self, command: Command) -> Result<(), Self::Error>;
 
@@ -185,28 +188,18 @@ pub trait ExecuteRead {
     }
 }
 
-pub trait Init {
-    type Error;
-
-    fn init(&mut self) -> Result<(), Self::Error>;
-}
-
-impl<T: Execute + hal::HasTimer> Init for T {
-    type Error = T::Error;
-
-    fn init(&mut self) -> Result<(), Self::Error> {
-        use hal::Timer;
-        self.timer().delay(80_000);
-        self.select_basic()?;
-        self.timer().delay(200);
-        self.select_basic()?;
-        self.timer().delay(200);
-        self.display_on_off(true, false, false)?;
-        self.timer().delay(200);
-        self.clear()?;
-        self.timer().delay(20_000);
-        self.entry_mode(true, false)
-    }
+pub fn init<Lcd: Execute, Clk: hal::Clock>(lcd: &mut Lcd, clk: Clk) -> Result<(), Lcd::Error> {
+        use fugit::ExtU32;
+        clk.wait(80.millis());
+        lcd.select_basic()?;
+        clk.wait(200.micros());
+        lcd.select_basic()?;
+        clk.wait(200.micros());
+        lcd.display_on_off(true, false, false)?;
+        clk.wait(200.micros());
+        lcd.clear()?;
+        clk.wait(20_000.micros());
+        lcd.entry_mode(true, false)
 }
 
 pub trait SharedBus {

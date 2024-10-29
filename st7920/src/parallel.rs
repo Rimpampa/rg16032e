@@ -8,9 +8,6 @@
 
 use core::convert::identity;
 
-use crate::hal::{HasTimer, Timer};
-use crate::{ext, Command, Execute, ExecuteRead};
-
 pub mod interface;
 pub use interface::{Interface4Bit, Interface8Bit};
 
@@ -125,63 +122,5 @@ impl<T: Output> Output for &mut T {
 impl<T: Input> Input for &mut T {
     fn read_u8(&mut self) -> Result<u8, Self::Error> {
         T::read_u8(self)
-    }
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-impl<O: Output + HasTimer> Execute for O {
-    type Error = O::Error;
-
-    fn execute(&mut self, command: Command) -> Result<(), Self::Error> {
-        self.timer().complete();
-
-        if let Command::Write(data) = command {
-            self.select_ram_write()?;
-            self.write_u16(data)?;
-            self.timer().program(72);
-            return Ok(());
-        }
-
-        self.select_command()?;
-        self.write_u8(command.into_byte())?;
-        self.timer().program(command.execution_time());
-        Ok(())
-    }
-}
-
-impl<O: Output + HasTimer> ext::Execute for O {
-    fn execute_ext(&mut self, command: ext::Command) -> Result<(), Self::Error> {
-        self.timer().complete();
-
-        self.select_command()?;
-        let [first, second] = command.into_bytes();
-        self.write_u8(first)?;
-        if second != 0 {
-            self.write_u8(second)?;
-        }
-        self.timer().program(command.execution_time());
-        Ok(())
-    }
-}
-
-impl<I: Input + HasTimer> ExecuteRead for I {
-    type Error = I::Error;
-
-    fn read_bf_ac(&mut self) -> Result<(bool, u8), Self::Error> {
-        self.timer().complete();
-
-        self.select_bf_ac()?;
-        let read = self.read_u8()?;
-        Ok((read & 0b10000000 != 0, read & 0b01111111))
-    }
-
-    fn read(&mut self) -> Result<u16, Self::Error> {
-        self.timer().complete();
-
-        self.select_ram_read()?;
-        let read = self.read_u16()?;
-        self.timer().program(72);
-        Ok(read)
     }
 }

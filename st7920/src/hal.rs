@@ -35,42 +35,17 @@ pub trait StopWatch {
     }
 }
 
-/// A count-down [`Timer`]
-pub trait Timer {
-    /// Program the [`Timer`] to run for the given amount of microseconds
-    fn program(&mut self, duration: u32);
-    /// Returns whether or not the [`Timer`] has expired
-    ///
-    /// When this function returns `true` it means that the amount of time
-    /// that was [`program`]med has elapsed (or that it was never started).
-    fn expired(&mut self) -> bool;
-    /// Wait until the timer expires
-    fn complete(&mut self) {
-        while !self.expired() {}
-    }
-    /// Wait for the given amount of microseconds
-    fn delay(&mut self, duration: u32) {
-        self.program(duration);
-        self.complete();
-    }
-}
+pub type Instant = fugit::Instant<u64, 1, 1_000_000>;
+pub type Duration = fugit::Duration<u64, 1, 1_000_000>;
 
-impl<T: Timer> Timer for &mut T {
-    fn program(&mut self, duration: u32) {
-        T::program(self, duration);
+pub trait Clock: Copy {
+    fn now(self) -> Instant;
+
+    fn wait_until(self, end: Instant) {
+        while self.now() < end {}
     }
 
-    fn expired(&mut self) -> bool {
-        T::expired(self)
-    }
-}
-
-pub trait HasTimer {
-    fn timer(&mut self) -> &mut impl Timer;
-}
-
-impl<T: HasTimer> HasTimer for &mut T {
-    fn timer(&mut self) -> &mut impl Timer {
-        T::timer(self)
+    fn wait(self, duration: impl Into<Duration>) {
+        self.wait_until(self.now() + duration.into());
     }
 }

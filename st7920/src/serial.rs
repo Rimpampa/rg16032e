@@ -3,7 +3,7 @@ use embedded_hal::{digital::OutputPin, spi::SpiBus};
 
 use crate::{
     ext,
-    hal::{HasTimer, Timer},
+    hal::{Clock, Duration, Instant},
     Command, Execute, SharedBus,
 };
 
@@ -20,90 +20,102 @@ fn encode_u16(rs: u8, data: u16) -> [u8; 5] {
     [sync(rs), a & 0xF0, a << 4, b & 0xF0, b << 4]
 }
 
-pub struct Interface<Spi, Timer, Cs, const PINS: usize> {
-    pub spi: Spi,
-    pub timer: Timer,
-    pub cs: [Cs; PINS],
+struct Pin<Cs> {
+    cs: Cs,
+    end: Instant,
 }
 
-impl<S, T, C, const P: usize> SharedBus for Interface<S, T, C, P> {
+pub struct Interface<Spi, Clk, Cs, const PINS: usize> {
+    spi: Spi,
+    clk: Clk,
+    pins: [Pin<Cs>; PINS],
+}
+
+impl<Spi, Clk: Clock, Cs, const PINS: usize> Interface<Spi, Clk, Cs, PINS> {
+    pub fn new(spi: Spi, clk: Clk, cs: [Cs; PINS]) -> Self {
+        let end = clk.now();
+        let pins = cs.map(|cs| Pin { cs, end });
+        Self { spi, clk, pins }
+    }
+}
+
+impl<Spi, Clk: Copy, Cs, const PINS: usize> SharedBus for Interface<Spi, Clk, Cs, PINS> {
     type Interface<'a>
-        = Interface<&'a mut S, &'a mut T, &'a mut C, 1>
+        = Interface<&'a mut Spi, Clk, &'a mut Cs, 1>
     where
-        C: 'a,
-        T: 'a,
-        S: 'a;
+        Cs: 'a,
+        Clk: 'a,
+        Spi: 'a;
 
     fn num(&self) -> usize {
-        P
+        PINS
     }
 
     fn get(&mut self, idx: usize) -> Option<Self::Interface<'_>> {
-        self.cs.get_mut(idx).map(|cs| Interface {
+        self.pins.get_mut(idx).map(|Pin { cs, end }| Interface {
             spi: &mut self.spi,
-            timer: &mut self.timer,
-            cs: [cs],
+            clk: self.clk,
+            pins: [Pin { cs, end: *end }],
         })
     }
 }
 
-impl<S, T: Timer, C: OutputPin> Interface<S, T, C, 1> {
+impl<Spi, Clk: Clock, Cs: OutputPin> Interface<Spi, Clk, Cs, 1> {
     pub fn transaction<O, E>(
         &mut self,
-        run: impl FnOnce(&mut S) -> Result<O, E>,
-    ) -> Result<O, Either<E, C::Error>> {
-        self.cs[0].set_high().map_err(Right)?;
+        duration: Duration,
+        run: impl FnOnce(&mut Spi) -> Result<O, E>,
+    ) -> Result<O, Either<E, Cs::Error>> {
+        self.clk.wait_until(self.pins[0].end);
+
+        self.pins[0].cs.set_high().map_err(Right)?;
         let result = run(&mut self.spi);
-        self.timer.delay(1000);
-        self.cs[0].set_low().map_err(Right)?;
+        // self.clock.delay(1000);
+        self.pins[0].cs.set_low().map_err(Right)?;
+
+        self.pins[0].end = self.clk.now() + duration;
         result.map_err(Left)
     }
 }
 
-impl<S, T: Timer, C, const P: usize> HasTimer for Interface<S, T, C, P> {
-    fn timer(&mut self) -> &mut impl Timer {
-        &mut self.timer
-    }
-}
+impl<Spi: SpiBus, Clk: Clock, Cs: OutputPin> Execute for Interface<Spi, Clk, Cs, 1> {
+    type Error = Either<Spi::Error, Cs::Error>;
 
-impl<S: SpiBus, T: Timer, C: OutputPin> Execute for Interface<S, T, C, 1> {
-    type Error = Either<S::Error, C::Error>;
+    fn init(&mut self) -> Result<(), Self::Error> {
+        crate::init(self, self.clk)
+    }
 
     fn execute(&mut self, command: Command) -> Result<(), Self::Error> {
-        self.timer.complete();
-
-        self.transaction(|spi| match command {
+        self.transaction(command.execution_time(), |spi| match command {
             Command::Write(data) => spi.write(&encode_u16(1, data)),
             _ => spi.write(&encode_u8(0, command.into_byte())),
-        })?;
-        self.timer.program(command.execution_time());
-        Ok(())
+        })
     }
 }
 
-impl<S: SpiBus, T: Timer, C: OutputPin> ext::Execute for Interface<S, T, C, 1> {
+impl<Spi: SpiBus, Clk: Clock, Cs: OutputPin> ext::Execute for Interface<Spi, Clk, Cs, 1> {
     fn execute_ext(&mut self, command: ext::Command) -> Result<(), Self::Error> {
-        self.timer.complete();
-
-        self.transaction(|spi| match command.into_bytes() {
+        self.transaction(command.execution_time(), |spi| match command.into_bytes() {
             [data, 0] => spi.write(&encode_u8(0, data)),
             [h, l] => spi.write(&encode_u16(0, (h as u16) << 8 | l as u16)),
-        })?;
-        self.timer.program(command.execution_time());
-        Ok(())
+        })
     }
 }
 
-impl<S: SpiBus, T: Timer, C: OutputPin> Execute for &mut Interface<S, T, C, 1> {
-    type Error = Either<S::Error, C::Error>;
+impl<Spi: SpiBus, Clk: Clock, Cs: OutputPin> Execute for &mut Interface<Spi, Clk, Cs, 1> {
+    type Error = Either<Spi::Error, Cs::Error>;
+
+    fn init(&mut self) -> Result<(), Self::Error> {
+        Interface::init(self)
+    }
 
     fn execute(&mut self, command: Command) -> Result<(), Self::Error> {
-        Interface::<S, T, C, 1>::execute(self, command)
+        Interface::<Spi, Clk, Cs, 1>::execute(self, command)
     }
 }
 
-impl<S: SpiBus, T: Timer, C: OutputPin> ext::Execute for &mut Interface<S, T, C, 1> {
+impl<Spi: SpiBus, Clk: Clock, Cs: OutputPin> ext::Execute for &mut Interface<Spi, Clk, Cs, 1> {
     fn execute_ext(&mut self, command: ext::Command) -> Result<(), Self::Error> {
-        Interface::<S, T, C, 1>::execute_ext(self, command)
+        Interface::<Spi, Clk, Cs, 1>::execute_ext(self, command)
     }
 }

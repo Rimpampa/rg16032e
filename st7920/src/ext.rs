@@ -1,3 +1,5 @@
+use crate::hal;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Command {
     StandBy,
@@ -42,8 +44,9 @@ pub enum Command {
 
 impl Command {
     /// Execution time of the [`Command`] in microseconds
-    pub fn execution_time(self) -> u32 {
-        1_600
+    pub fn execution_time(self) -> hal::Duration {
+        use fugit::ExtU64;
+        1_600.micros()
     }
 
     pub fn into_bytes(self) -> [u8; 2] {

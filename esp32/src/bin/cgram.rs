@@ -5,5 +5,5 @@
 fn main() -> ! {
     esp32::setup!(p, io, rng);
     let lcd = esp32::lcd!(p, io.pins);
-    examples::cgram::run(lcd, esp_hal::time::now(), rng).unwrap()
+    examples::cgram::run(lcd, st7920::esp::GlobalClock, rng).unwrap()
 }

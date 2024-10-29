@@ -1,6 +1,7 @@
-use st7920::{ext::Execute, hal::Timer};
+use st7920::{ext::Execute, hal::Clock};
+use fugit::ExtU64;
 
-pub fn run<Lcd: Execute>(mut lcd: Lcd, mut delay: impl Timer) -> Result<!, Lcd::Error> {
+pub fn run<Lcd: Execute>(mut lcd: Lcd, clock: impl Clock) -> Result<!, Lcd::Error> {
     lcd.ddram_addr(0)?;
     for _ in 0..10 {
         lcd.write(u16::from_be_bytes(*b"~*"))?;
@@ -24,7 +25,7 @@ pub fn run<Lcd: Execute>(mut lcd: Lcd, mut delay: impl Timer) -> Result<!, Lcd::
     for i in (0..2).cycle() {
         log::info!("REVERSE {i}");
         lcd.reverse(i)?;
-        delay.delay(1000_000);
+        clock.wait(1.secs());
         lcd.reverse(i)?;
     }
 
