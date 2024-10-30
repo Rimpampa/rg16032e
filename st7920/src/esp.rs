@@ -5,7 +5,7 @@ use esp_hal::{gpio, peripheral::Peripheral};
 
 use fugit::RateExtU32;
 
-use crate::hal::{Clock, InPin, Instant, OutPin};
+use crate::hal::{InPin, OutPin};
 use crate::{parallel::interface as parallel, serial};
 
 pub trait In = Peripheral<P: gpio::InputPin> + 'static;
@@ -15,13 +15,10 @@ pub use esp_hal::time::now;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#[derive(Clone, Copy)]
-pub struct GlobalClock;
-
-impl Clock for GlobalClock {
-    fn now(self) -> Instant {
-        now()
-    }
+#[inline(never)]
+#[no_mangle]
+unsafe fn _st7920_now() -> crate::hal::Instant {
+    now()
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -62,7 +59,7 @@ pub fn parallel_4bit<'a, const NUM: usize>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, GlobalClock, NUM> {
+) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, NUM> {
     use gpio::Level::Low;
     parallel::Interface::new(
         Output::new(rs, Low),
@@ -74,7 +71,6 @@ pub fn parallel_4bit<'a, const NUM: usize>(
             Flex::new(db6),
             Flex::new(db7),
         ],
-        GlobalClock,
     )
 }
 
@@ -90,7 +86,7 @@ pub fn parallel_8bit<'a, const NUM: usize>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, GlobalClock, NUM> {
+) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, NUM> {
     use gpio::Level::Low;
     parallel::Interface::new(
         Output::new(rs, Low),
@@ -106,7 +102,6 @@ pub fn parallel_8bit<'a, const NUM: usize>(
             Flex::new(db6),
             Flex::new(db7),
         ],
-        GlobalClock,
     )
 }
 
@@ -117,11 +112,10 @@ pub fn serial<'a, I: Instance + 'a, const NUM: usize>(
     mosi: impl Peripheral<P: PeripheralOutput> + 'a,
     sck: impl Peripheral<P: PeripheralOutput> + 'a,
     cs: [impl Out + 'a; NUM],
-) -> serial::Interface<Spi<'a, I, FullDuplexMode>, GlobalClock, Output<'a>, NUM> {
+) -> serial::Interface<Spi<'a, I, FullDuplexMode>, Output<'a>, NUM> {
     use gpio::Level::Low;
     serial::Interface::new(
         Spi::new(spi, 530.kHz(), SpiMode::Mode0).with_pins(sck, mosi, NoPin, NoPin),
-        GlobalClock,
         cs.map(|cs| Output::new(cs, Low)),
     )
 }

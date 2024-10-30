@@ -5,5 +5,5 @@
 fn main() -> ! {
     esp32::setup!(p, io, rng);
     let lcd = esp32::lcd!(p, io.pins);
-    examples::two_at_once::run(lcd, st7920::esp::GlobalClock, rng).unwrap();
+    examples::two_at_once::run(lcd, rng).unwrap();
 }

@@ -1,7 +1,7 @@
-use st7920::{ext::Execute, hal::Clock};
 use fugit::ExtU64;
+use st7920::{ext::Execute, hal::sleep};
 
-pub fn run<Lcd, E>(mut lcd: Lcd, clock: impl Clock) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd) -> Result<!, E>
 where
     for<'a> &'a mut Lcd: Execute<Error = E>,
 {
@@ -10,7 +10,7 @@ where
     let mut counter = 0;
     loop {
         step(&mut lcd, &mut counter)?;
-        clock.wait(200.millis());
+        sleep(200.millis());
     }
 }
 
@@ -56,7 +56,7 @@ pub fn step<Lcd: Execute>(mut lcd: Lcd, counter: &mut u8) -> Result<(), Lcd::Err
         _ => match *counter {
             0b011111 => *counter = 0b111110,
             _ => *counter += 1,
-        }
+        },
     }
 
     Ok(())
