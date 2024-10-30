@@ -1,8 +1,8 @@
-use st7920::{ext::Execute as ExecuteExt, hal::Clock, SharedBus};
-use rand_core::RngCore;
 use fugit::ExtU64;
+use rand_core::RngCore;
+use st7920::{ext::Execute as ExecuteExt, hal::sleep, SharedBus};
 
-pub fn run<Lcd, E>(mut lcd: Lcd, clock: impl Clock, mut rng: impl RngCore) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd, mut rng: impl RngCore) -> Result<!, E>
 where
     Lcd: SharedBus,
     for<'a> Lcd::Interface<'a>: ExecuteExt<Error = E>,
@@ -15,7 +15,7 @@ where
         super::cgram::step(lcd.get(0).unwrap(), &mut rng)?;
         for _ in 0..5 {
             super::scroll::step(lcd.get(1).unwrap(), &mut counter)?;
-            clock.wait(150.millis());
+            sleep(150.millis());
         }
     }
 }

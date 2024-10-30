@@ -1,8 +1,8 @@
-use st7920::{hal::Clock, Execute};
-use rand_core::RngCore;
 use fugit::ExtU64;
+use rand_core::RngCore;
+use st7920::{hal::sleep, Execute};
 
-pub fn run<Lcd, E>(mut lcd: Lcd, clock: impl Clock, mut rng: impl RngCore) -> Result<!, E>
+pub fn run<Lcd, E>(mut lcd: Lcd, mut rng: impl RngCore) -> Result<!, E>
 where
     for<'a> &'a mut Lcd: Execute<Error = E>,
 {
@@ -10,7 +10,7 @@ where
 
     loop {
         step(&mut lcd, &mut rng)?;
-        clock.wait(500.millis());
+        sleep(500.millis());
     }
 }
 
