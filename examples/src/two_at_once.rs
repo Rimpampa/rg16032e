@@ -1,5 +1,5 @@
-use st7920::{ext::Execute as ExecuteExt, hal::Timer, SharedBus};
 use rand_core::RngCore;
+use st7920::{ext::Execute as ExecuteExt, hal::Timer, SharedBus};
 
 pub fn run<Lcd, E>(mut lcd: Lcd, mut delay: impl Timer, mut rng: impl RngCore) -> Result<!, E>
 where

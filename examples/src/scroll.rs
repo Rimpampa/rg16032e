@@ -55,7 +55,7 @@ pub fn step<Lcd: Execute>(mut lcd: Lcd, counter: &mut u8) -> Result<(), Lcd::Err
         _ => match *counter {
             0b011111 => *counter = 0b111110,
             _ => *counter += 1,
-        }
+        },
     }
 
     Ok(())
