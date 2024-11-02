@@ -23,7 +23,12 @@ cortex-m = "0.7"
 cortex-m-rt = "0.7"
 defmt = "0.3.8"
 defmt-rtt = "0.4.1"
-panic-probe = { version = "0.3.1", features = ["print-defmt"] }
+embedded-hal = "1.0.0"
+fugit = "0.3.7"
+
+[dependencies.panic-probe]
+version = "0.3.1"
+features = ["print-defmt"]
 
 [dependencies.rand_mt]
 version = "4.2.2"
@@ -36,7 +41,6 @@ features = ["stm32f401"]
 
 [dependencies.st7920]
 path = "../st7920"
-features = ["stm32f4"]
 
 [dependencies.examples]
 path = "../examples"

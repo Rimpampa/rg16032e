@@ -1,17 +1,25 @@
 #![no_std]
 #![feature(decl_macro)]
 
-pub mod now;
-
 // Print panic message to probe console
 use defmt_rtt as _;
 use panic_probe as _;
+
+mod flex;
+mod now;
+pub mod parallel;
+pub mod serial;
+
+use stm32f4xx_hal::gpio;
+
+type Input = gpio::AnyPin<gpio::Input>;
+type Output = gpio::AnyPin<gpio::Output<gpio::PushPull>>;
 
 #[cfg(all(feature = "serial", not(feature = "two-displays")))]
 pub macro lcd($p:expr, $clocks:expr) {{
     let gpioa = ::stm32f4xx_hal::gpio::GpioExt::split($p.GPIOA);
 
-    let mut lcd = ::st7920::stm32f4::serial(
+    let mut lcd = $crate::serial::new(
         $p.SPI1,
         gpioa.pa7,
         gpioa.pa5,
@@ -28,7 +36,7 @@ pub macro lcd($p:expr, $clocks:expr) {{
 pub macro lcd($p:expr, $clocks:expr) {{
     let gpioa = ::stm32f4xx_hal::gpio::GpioExt::split($p.GPIOA);
 
-    let mut lcd = ::st7920::stm32f4::serial(
+    let mut lcd = $crate::serial::new(
         $p.SPI1,
         gpioa.pa7,
         gpioa.pa5,

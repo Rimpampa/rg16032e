@@ -20,6 +20,7 @@ name = "two_at_once"
 required-features = ["two-displays"]
 
 [dependencies]
+embedded-hal = "1.0.0"
 fugit = "0.3.7"
 log = "0.4.22"
 
@@ -28,7 +29,6 @@ path = "../examples"
 
 [dependencies.st7920]
 path = "../st7920"
-features = ["esp"]
 
 [dependencies.esp-println]
 version = "0.10.0"

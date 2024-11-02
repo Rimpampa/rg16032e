@@ -5,9 +5,22 @@
 
 use esp_backtrace as _;
 
+mod flex;
+pub mod parallel;
+pub mod serial;
+
+pub trait In = esp_hal::peripheral::Peripheral<P: esp_hal::gpio::InputPin> + 'static;
+pub trait Out = esp_hal::peripheral::Peripheral<P: esp_hal::gpio::OutputPin> + 'static;
+
+#[inline(never)]
+#[no_mangle]
+unsafe fn _st7920_now() -> st7920::hal::Instant {
+    esp_hal::time::now()
+}
+
 #[cfg(all(feature = "parallel", not(feature = "two-displays")))]
 pub macro lcd($peripherals:expr, $pins:expr) {{
-    let mut lcd = ::st7920::esp::parallel_4bit(
+    let mut lcd = $crate::parallel::new_4bit(
         $pins.gpio32,
         $pins.gpio33,
         [$pins.gpio25],
@@ -24,7 +37,7 @@ pub macro lcd($peripherals:expr, $pins:expr) {{
 
 #[cfg(all(feature = "serial", not(feature = "two-displays")))]
 pub macro lcd($peripherals:expr, $pins:expr) {{
-    let mut lcd = ::st7920::esp::serial(
+    let mut lcd = $crate::serial::new(
         $peripherals.SPI2,
         $pins.gpio26,
         $pins.gpio27,
@@ -38,7 +51,7 @@ pub macro lcd($peripherals:expr, $pins:expr) {{
 
 #[cfg(all(feature = "serial", feature = "two-displays"))]
 pub macro lcd($peripherals:expr, $pins:expr) {{
-    let mut lcd = ::st7920::esp::serial(
+    let mut lcd = $crate::serial::new(
         $peripherals.SPI2,
         $pins.gpio26,
         $pins.gpio27,
