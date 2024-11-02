@@ -1,30 +1,43 @@
-use embedded_hal::digital::OutputPin;
-
 use crate::{
-    hal::{HasTimer, InPin, IoPin, OutPin, Timer},
+    hal::{HasTimer, InPin, OutPin, Timer},
     SharedBus,
 };
 
+use embedded_hal::digital::{InputPin, OutputPin};
+
 use super::{Control, Input, Output};
 
-pub struct Interface<Out, InOut, Timer, const PINS: usize, const BITS: usize> {
-    pub rs: Out,
-    pub rw: Out,
-    pub e: [Out; PINS],
-    pub bus: [InOut; BITS],
-    pub timer: Timer,
+pub trait Config {
+    type Error;
+    type Out: OutPin<Error = Self::Error>;
+    type InOut: OutPin<Error = Self::Error>;
+    type Timer: Timer;
 }
 
-impl<O, Io, T, const P: usize, const B: usize> SharedBus for Interface<O, Io, T, P, B> {
+pub struct Interface<C: Config, const PINS: usize, const BITS: usize> {
+    pub rs: C::Out,
+    pub rw: C::Out,
+    pub e: [C::Out; PINS],
+    pub bus: [C::InOut; BITS],
+    pub timer: C::Timer,
+}
+
+impl<C: Config, const PINS: usize, const BITS: usize> SharedBus for Interface<C, PINS, BITS>
+where
+    for<'a> &'a mut C: Config<
+        Error = C::Error,
+        Out = &'a mut C::Out,
+        InOut = &'a mut C::InOut,
+        Timer = &'a mut C::Timer,
+    >,
+{
     type Interface<'a>
-        = Interface<&'a mut O, &'a mut Io, &'a mut T, 1, B>
+        = Interface<&'a mut C, 1, BITS>
     where
-        O: 'a,
-        Io: 'a,
-        T: 'a;
+        C: 'a;
 
     fn num(&self) -> usize {
-        P
+        PINS
     }
 
     fn get(&mut self, idx: usize) -> Option<Self::Interface<'_>> {
@@ -40,14 +53,14 @@ impl<O, Io, T, const P: usize, const B: usize> SharedBus for Interface<O, Io, T,
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-impl<O, Io, T: Timer, const P: usize, const B: usize> HasTimer for Interface<O, Io, T, P, B> {
+impl<C: Config, const PINS: usize, const BITS: usize> HasTimer for Interface<C, PINS, BITS> {
     fn timer(&mut self) -> &mut impl Timer {
         &mut self.timer
     }
 }
 
-impl<O: OutputPin, Io, T: Timer, const B: usize> Control for Interface<O, Io, T, 1, B> {
-    type Error = O::Error;
+impl<C: Config, const B: usize> Control for Interface<C, 1, B> {
+    type Error = C::Error;
 
     fn enable(&mut self) -> Result<(), Self::Error> {
         self.timer.complete();
@@ -69,12 +82,12 @@ impl<O: OutputPin, Io, T: Timer, const B: usize> Control for Interface<O, Io, T,
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-impl<O, Io: OutPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
-    pub fn set_as_output(&mut self) -> Result<(), Io::Error> {
+impl<C: Config, const PINS: usize, const BITS: usize> Interface<C, PINS, BITS> {
+    pub fn set_as_output(&mut self) -> Result<(), C::Error> {
         self.bus.iter_mut().try_for_each(OutPin::set_as_output)
     }
 
-    fn write_bus(&mut self, data: u8) -> Result<(), Io::Error> {
+    fn write_bus(&mut self, data: u8) -> Result<(), C::Error> {
         for (i, pin) in self.bus.iter_mut().enumerate() {
             let level = data & (1 << i) != 0;
             pin.set_state(level.into())?
@@ -83,12 +96,15 @@ impl<O, Io: OutPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B>
     }
 }
 
-impl<O, Io: IoPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> {
-    pub fn set_as_input(&mut self) -> Result<(), Io::Error> {
+impl<C: Config, const PINS: usize, const BITS: usize> Interface<C, PINS, BITS>
+where
+    C::InOut: InPin<Error = C::Error>,
+{
+    pub fn set_as_input(&mut self) -> Result<(), C::Error> {
         self.bus.iter_mut().try_for_each(InPin::set_as_input)
     }
 
-    fn read_bus(&mut self) -> Result<u8, Io::Error> {
+    fn read_bus(&mut self) -> Result<u8, C::Error> {
         self.bus
             .iter_mut()
             .rev()
@@ -98,16 +114,10 @@ impl<O, Io: IoPin, T, const P: usize, const B: usize> Interface<O, Io, T, P, B> 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface4Bit<Out, InOut, Timer, const PINS: usize> =
-    Interface<Out, InOut, Timer, PINS, 4>;
+pub type Interface4Bit<C, const PINS: usize> = Interface<C, PINS, 4>;
 
-impl<O, Io, T> Interface4Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: OutPin<Error = O::Error>,
-    T: Timer,
-{
-    pub fn write_u4(&mut self, nibble: u8) -> Result<(), O::Error> {
+impl<C: Config> Interface4Bit<C, 1> {
+    pub fn write_u4(&mut self, nibble: u8) -> Result<(), C::Error> {
         self.timer.complete();
 
         self.set_as_output()?;
@@ -116,13 +126,8 @@ where
     }
 }
 
-impl<O, Io, T> Interface4Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: IoPin<Error = O::Error>,
-    T: Timer,
-{
-    pub fn read_u4(&mut self) -> Result<u8, O::Error> {
+impl<C: Config<InOut: InPin<Error = C::Error>>> Interface4Bit<C, 1> {
+    pub fn read_u4(&mut self) -> Result<u8, C::Error> {
         self.timer.complete();
 
         self.set_as_input()?;
@@ -130,24 +135,14 @@ where
     }
 }
 
-impl<O, Io, T> Output for Interface4Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: OutPin<Error = O::Error>,
-    T: Timer,
-{
+impl<C: Config> Output for Interface4Bit<C, 1> {
     fn write_u8(&mut self, data: u8) -> Result<(), Self::Error> {
         self.write_u4(data >> 4)?;
         self.write_u4(data & 0xF)
     }
 }
 
-impl<O, Io, T> Input for Interface4Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: IoPin<Error = O::Error>,
-    T: Timer,
-{
+impl<C: Config<InOut: InPin<Error = C::Error>>> Input for Interface4Bit<C, 1> {
     fn read_u8(&mut self) -> Result<u8, Self::Error> {
         let data = self.read_u4()? << 4 | self.read_u4()?;
         Ok(data)
@@ -156,15 +151,9 @@ where
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-pub type Interface8Bit<Out, InOut, Timer, const PINS: usize> =
-    Interface<Out, InOut, Timer, PINS, 8>;
+pub type Interface8Bit<C, const PINS: usize> = Interface<C, PINS, 8>;
 
-impl<O, Io, T> Output for Interface8Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: OutPin<Error = O::Error>,
-    T: Timer,
-{
+impl<C: Config> Output for Interface8Bit<C, 1> {
     fn write_u8(&mut self, data: u8) -> Result<(), Self::Error> {
         self.timer.complete();
 
@@ -174,12 +163,7 @@ where
     }
 }
 
-impl<O, Io, T> Input for Interface8Bit<O, Io, T, 1>
-where
-    O: OutputPin,
-    Io: IoPin<Error = O::Error>,
-    T: Timer,
-{
+impl<C: Config<InOut: InPin<Error = C::Error>>> Input for Interface8Bit<C, 1> {
     fn read_u8(&mut self) -> Result<u8, Self::Error> {
         self.timer.complete();
 

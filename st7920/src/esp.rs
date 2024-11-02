@@ -57,6 +57,15 @@ impl OutPin for Output<'_> {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+pub struct ParallelConfig<'a>(core::marker::PhantomData<&'a ()>);
+
+impl<'a> parallel::Config for ParallelConfig<'a> {
+    type Error = core::convert::Infallible;
+    type Out = Output<'a>;
+    type InOut = Flex<'a>;
+    type Timer = Instant;
+}
+
 pub fn parallel_4bit<'a, const NUM: usize>(
     rs: impl Out + 'a,
     rw: impl Out + 'a,
@@ -65,7 +74,7 @@ pub fn parallel_4bit<'a, const NUM: usize>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface4Bit<Output<'a>, Flex<'a>, Instant, NUM> {
+) -> parallel::Interface4Bit<ParallelConfig<'a>, NUM> {
     use gpio::Level::Low;
     parallel::Interface {
         rs: Output::new(rs, Low),
@@ -93,7 +102,7 @@ pub fn parallel_8bit<'a, const NUM: usize>(
     db5: impl In + Out + 'a,
     db6: impl In + Out + 'a,
     db7: impl In + Out + 'a,
-) -> parallel::Interface8Bit<Output<'a>, Flex<'a>, Instant, NUM> {
+) -> parallel::Interface8Bit<ParallelConfig<'a>, NUM> {
     use gpio::Level::Low;
     parallel::Interface {
         rs: Output::new(rs, Low),

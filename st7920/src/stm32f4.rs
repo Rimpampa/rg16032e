@@ -133,6 +133,15 @@ impl OutPin for Output {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+pub struct ParallelConfig<T>(core::marker::PhantomData<T>);
+
+impl<T: Timer> parallel::Config for ParallelConfig<T> {
+    type Error = core::convert::Infallible;
+    type Out = Output;
+    type InOut = Flex;
+    type Timer = T;
+}
+
 pub fn parallel_4bit<T: Timer, const NUM: usize>(
     rs: impl Into<Output>,
     rw: impl Into<Output>,
@@ -142,7 +151,7 @@ pub fn parallel_4bit<T: Timer, const NUM: usize>(
     db6: impl Into<Input>,
     db7: impl Into<Input>,
     timer: T,
-) -> parallel::Interface4Bit<Output, Flex, T, NUM> {
+) -> parallel::Interface4Bit<ParallelConfig<T>, NUM> {
     parallel::Interface {
         rs: rs.into(),
         rw: rw.into(),
@@ -170,7 +179,7 @@ pub fn parallel_8bit<T: Timer, const NUM: usize>(
     db6: impl Into<Input>,
     db7: impl Into<Input>,
     timer: T,
-) -> parallel::Interface8Bit<Output, Flex, T, NUM> {
+) -> parallel::Interface8Bit<ParallelConfig<T>, NUM> {
     parallel::Interface {
         rs: rs.into(),
         rw: rw.into(),
